@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {createTopic, handleError, getAllOpinions} from "../../service/fetchService";
+import {createTopic, handleError, getAllOpinions, getClusters} from "../../service/fetchService";
 import {useNavigate} from "react-router";
 import {Navigation} from "../Navigation";
 
@@ -7,6 +7,7 @@ function Admin() {
     const [topic, setTopic] = useState("");
     const [allOpinions, setAllOpinions] = useState<any>({});
     const [openTopics, setOpenTopics] = useState<{ [uuid: string]: boolean }>({});
+    const [clusters, setClusters] = useState<{ [uuid: string]: any }>({});
     let navigation = useNavigate();
 
     function sendCreateTopic() {
@@ -30,6 +31,31 @@ function Admin() {
             ...prev,
             [uuid]: !prev[uuid]
         }));
+
+        if (!clusters[uuid]) {
+            getClusters(uuid)
+                .then(data => {
+                    setClusters(prev => ({
+                        ...prev,
+                        [uuid]: data.clusters || []
+                    }));
+                })
+                .catch(err => console.error(err));
+        }
+    }
+
+    function getClusterIdForOpinion(uuid: string, opinion: string, username: string): number | null {
+        const topicClusters = clusters[uuid];
+        if (!topicClusters) return null;
+
+        for (const cluster of topicClusters) {
+            for (const rawOpinion of cluster.raw_opinions) {
+                if (rawOpinion.opinion === opinion && rawOpinion.username === username) {
+                    return cluster.cluster_id;
+                }
+            }
+        }
+        return null;
     }
 
     return (
@@ -81,12 +107,20 @@ function Admin() {
                                     <div className="mt-4 grid gap-3">
                                         {topicData.opinions.map((opTuple: any[], i: number) => {
                                             const [opinion, weight, username] = opTuple;
+                                            const clusterId = getClusterIdForOpinion(uuid, opinion, username);
                                             return (
                                                 <div
                                                     key={i}
                                                     className="p-3 border rounded-lg bg-gray-50 shadow-sm"
                                                 >
-                                                    <div className="font-medium text-gray-800">{opinion}</div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="font-medium text-gray-800 flex-1">{opinion}</div>
+                                                        {clusterId !== null && (
+                                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                                                Cluster {clusterId}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="text-sm text-gray-600">
                                                         {username} — Gewicht: {weight}
                                                     </div>

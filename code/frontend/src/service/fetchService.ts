@@ -96,6 +96,18 @@ export function getLiveView(uuid: string): Promise<LiveViewResponse> {
     })
 }
 
+export function getClusters(uuid: string) {
+    return fetch(`${API_ENDPOINT}/${Endpoints.CLUSTERS}/${uuid}`, {
+        method: 'GET',
+        headers: JSON_HEADER,
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText)
+    })
+}
+
 export function handleError(errorText: string, callback: () => void) {
     alert(errorText)
     callback()
