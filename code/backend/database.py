@@ -112,8 +112,8 @@ def insert_user(username: str, session_id: str):
     
 def insert_topic(uuid: str, content: str, deadline: int):
     query_wrapper("""
-        INSERT OR REPLACE INTO Topics (uuid, content current_state, deadline)
-        VALUES (?, ?, ?);
+        INSERT OR REPLACE INTO Topics (uuid, content, current_state, deadline)
+        VALUES (?, ?, ?, ?);
     """, uuid, content, 0, deadline)
     # after initialization the state must be the init state 0
 
@@ -128,7 +128,7 @@ def insert_raw_opinion(username: str, uuid: int, opinion: str, weight: int):
 def insert_clustered_opinion(ai_gen_heading: str, uuid: int, leader_id: str):
     query_wrapper("""
         INSERT INTO ClusteredOpinion (ai_gen_heading, uuid, leader_id)
-        VALUES (?, ?);
+        VALUES (?, ?, ?);
     """, ai_gen_heading, uuid, leader_id)
 
 
@@ -177,7 +177,7 @@ def get_content_by_uuid(uuid: int) -> tuple|None: # (content, state, deadline)
 
     c.execute("""
         SELECT content, current_state, deadline FROM Topics
-        WHERE session_id = ?;
+        WHERE uuid = ?;
     """, (uuid,))
 
     row = c.fetchone()

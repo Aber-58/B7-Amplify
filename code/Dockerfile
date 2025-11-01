@@ -12,22 +12,23 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     git \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Flask
-RUN pip install --no-cache-dir Flask scikit-learn torch transformers einops huggingface_hub sentence-transformers
-
-# Install Deno
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get install -y nodejs
 
-# Repo
 WORKDIR /app
+
+COPY requirements.txt /app
+
+RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -e git+https://github.com/shoeffner/Flask-Websockets.git@master#egg=Flask-Websockets
+
 # State
 RUN mkdir -p /state
-
-# Expose Flask default port
 EXPOSE 4200
 
-# Default command (interactive shell)
-CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]
+#CMD ["python", "/app/backend/app.py"]
+CMD ["/bin/bash", "-c", "source /app/env.source && exec python /app/backend/app.py"]
+#CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]

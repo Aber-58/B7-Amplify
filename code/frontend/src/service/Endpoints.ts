@@ -1,5 +1,8 @@
 export enum Endpoints {
     LOGIN='login',
     ADMIN='admin',
-    VALIDATE='validate'
+    VALIDATE='validate',
+    JOIN='join',
+    POLL='poll',
+    TOPIC='topic'
 }
