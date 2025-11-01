@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {useNavigate, useParams} from "react-router";
 import {createOpinion, handleError, joinSession} from "../../service/fetchService";
 import {JoinResponse} from "../../service/model/TopicResponse";
@@ -10,10 +10,11 @@ function Poll() {
     const [pollSessionData, setPollSessionData] = useState<JoinResponse | undefined>(undefined)
     const {uuid} = useParams();
     const navigate = useNavigate();
-
-    if (uuid) {
-        joinSession(uuid).then(setPollSessionData)
-    }
+    useCallback(() => {
+        if (uuid) {
+            joinSession(uuid).then(setPollSessionData)
+        }
+    }, [uuid])
 
     function submitOpinion() {
         if (uuid) {
