@@ -1,8 +1,8 @@
 import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router";
 import {createOpinion, handleError, joinSession} from "../../service/fetchService";
-import {JoinResponse} from "../../service/model/TopicResponse";
 import {Navigation} from "../Navigation";
+import {JoinResponse} from "../../service/model/JoinResponse";
 
 function Poll() {
     const [opinion, setOpinion] = useState("")

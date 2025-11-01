@@ -1,38 +1,108 @@
-import {useState} from "react";
-import {createTopic, handleError} from "../../service/fetchService";
+import {useEffect, useState} from "react";
+import {createTopic, handleError, getAllOpinions} from "../../service/fetchService";
 import {useNavigate} from "react-router";
 import {Navigation} from "../Navigation";
 
 function Admin() {
-    const [topic, setTopic] = useState("")
+    const [topic, setTopic] = useState("");
+    const [allOpinions, setAllOpinions] = useState<any>({});
+    const [openTopics, setOpenTopics] = useState<{ [uuid: string]: boolean }>({});
     let navigation = useNavigate();
+
     function sendCreateTopic() {
-        createTopic(topic).then(topic => {
-            navigation(`${Navigation.INVITE}/${topic.uuid}`);
-        }).catch(error => handleError(error, () => navigation((Navigation.ERROR))))
+        createTopic(topic)
+            .then(topic => {
+                navigation(`${Navigation.INVITE}/${topic.uuid}`);
+            })
+            .catch(error => handleError(error, () => navigation((Navigation.ERROR))));
+    }
+
+    useEffect(() => {
+        getAllOpinions("")
+            .then(data => {
+                setAllOpinions(data.opinions || {});
+            })
+            .catch(err => console.error(err));
+    }, []);
+
+    function toggle(uuid: string) {
+        setOpenTopics(prev => ({
+            ...prev,
+            [uuid]: !prev[uuid]
+        }));
     }
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8">
-                <h1 className="text-3xl font-bold text-primary text-center mb-8">Admin</h1>
+            <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-8 space-y-8">
+
+                <h1 className="text-3xl font-bold text-primary text-center">Admin</h1>
+
+                {/* Create Topic */}
                 <div className="space-y-4">
-                    <input 
-                        value={topic} 
-                        onChange={e => setTopic(e.target.value)} 
+                    <input
+                        value={topic}
+                        onChange={e => setTopic(e.target.value)}
                         placeholder="Topic"
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
                     />
-                    <button 
-                        onClick={() => sendCreateTopic()}
+                    <button
+                        onClick={sendCreateTopic}
                         className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors font-medium"
                     >
                         Erstellen
                     </button>
                 </div>
+
+                {/* Topic List */}
+                <div className="pt-6 border-t border-gray-200 space-y-4">
+                    {Object.entries(allOpinions).map(([uuid, topicData]: any) => {
+                        const open = openTopics[uuid] ?? false;
+                        return (
+                            <div key={uuid} className="border rounded-lg p-4">
+                                {/* Header row with toggle and button */}
+                                <div className="flex items-center justify-between">
+                                    <button
+                                        onClick={() => toggle(uuid)}
+                                        className="text-left flex items-center gap-2"
+                                    >
+                                        <span className="text-lg">{open ? "▼" : "▶"}</span>
+                                        <span className="font-semibold text-lg">{topicData.content}</span>
+                                    </button>
+
+                                    <button
+                                        className="text-sm px-2 py-1 border rounded-lg hover:bg-gray-100 transition"
+                                    >
+                                        Start Cluster
+                                    </button>
+                                </div>
+
+                                {open && (
+                                    <div className="mt-4 grid gap-3">
+                                        {topicData.opinions.map((opTuple: any[], i: number) => {
+                                            const [opinion, weight, username] = opTuple;
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="p-3 border rounded-lg bg-gray-50 shadow-sm"
+                                                >
+                                                    <div className="font-medium text-gray-800">{opinion}</div>
+                                                    <div className="text-sm text-gray-600">
+                                                        {username} — Gewicht: {weight}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
             </div>
         </div>
-    )
+    );
 }
 
-export default Admin
+export default Admin;
