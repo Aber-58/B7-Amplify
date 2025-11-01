@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --no-cache-dir Flask scikit-learn torch transformers einops huggingface_hub sentence-transformers
 
 # Install Deno
-RUN curl -fsSL curl -fsSL https://deno.land/install.sh | sh && \
-    mv /root/.deno/bin/deno /usr/local/bin/deno
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -y nodejs
 
 # Repo
 WORKDIR /app
