@@ -15,7 +15,7 @@ def ask_mistral(prompt, model="mistral-small-latest"):
         stream=False
     )
     try:
-        data = json.loads(res.choices[0].message.content.replace('json', '').replace('`', ''))
+        data = json.loads(res.choices[0].message.content)
         return data
     except json.JSONDecodeError as e:
         raise ValueError(
@@ -36,7 +36,7 @@ def get_category_titles_prompt(texts, labels):
     grouped_texts = group_texts_by_label(texts, labels)
     prompt = """You will receive information in the form of "Category <number>: \n <examples>"
     Your objective is to write a list with a very short title max 2 words for each of these topics. The format of your answer should be like a jason, yet skip using ` for formatting:
-    "Category <number>: \n <Title>" for each of the categories. Write no additonal text.
+    "Category <number>: \n <TItle>" for each of the categories. Write no additonal text.
     
     """ 
     for cat, texts in grouped_texts.items():
@@ -45,27 +45,21 @@ def get_category_titles_prompt(texts, labels):
 
     return prompt
 
-def choose_proposed_solutions(cluster_data): # clusterdata from db
+def choose_proposed_solutions(user_solutions):
     prompt = """You will receive a list of solution proposed by various users.
-    Out of the whole list, generate 2-3 solutions that are the most represented.
-    The format should be <Title (2 Words max)>:<one example from a user that represents the title>
-    Return it as a json format, no additional text. Add NO formatting using the `-Symbol, just raw string without `
+    Out of the whole list, generate 3 solutions that are the most represented.
+    Your objective is to write a list with a very short title max 2 words for each of these topics. The format of your answer should be like a jason, yet skip using ` for formatting:
+    "Category <number>: \n <TItle>" for each of the categories. Write no additonal text.
+    
     """ 
-    opinions_by_heading = {
-        cluster["heading"]: [op["opinion"] for op in cluster["raw_opinions"]]
-        for cluster in cluster_data["clusters"]
-    }
-    heading = cluster_data['clusters'][0]["heading"]
-    prompt += f"\n {opinions_by_heading[heading]}"
-    return heading, prompt
+    for cat, texts in grouped_texts.items():
+        prompt += f"\nCategory {cat}:"
+        prompt += ', '.join(texts)
+    pass
+    return prompt
 
+    
 
-
-
-# cluster = {"clusters":[{"cluster_id":2,"heading":"Full remote work increases productivity","leader_id":"liam","raw_opinions":[{"opinion":"Hybrid work model is the best balance","raw_id":11,"username":"kelly","weight":8},{"opinion":"Full remote work increases productivity","raw_id":12,"username":"liam","weight":9},{"opinion":"In-person collaboration is essential for creativity","raw_id":13,"username":"mia","weight":6},{"opinion":"Flexible schedule with 2-3 days in office","raw_id":14,"username":"noah","weight":7}]}]}
-# title, prompt = choose_proposed_solutions(cluster)
-# mistral_result = ask_mistral(prompt)
-# print({"title":title, "mistral_result":mistral_result})
 
 
 # # Example
