@@ -17,8 +17,8 @@ all text/html
 
 # Database
 
-User(**username**, uuid->Topic, session id)
-Topics(**uuid**, current_state, deadline)
+User(**username**, session id)
+Topics(**uuid**, content, current_state, deadline)
 RawOpinion(**id**, username->User, topic->Topics, opinion, weigth)
 RawOpinionClusteredOpinion(**id**->RawOpinion, **id**->ClusteredOpinion)
 ClusteredOpinion(**id**, ai gen. heading, leader id->User)
