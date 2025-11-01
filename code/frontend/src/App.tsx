@@ -12,7 +12,7 @@ function App() {
     return <>
         <Routes>
                 <Route path="admin" element={<Admin />} />
-                <Route path="invite" element={<Invite />} />
+                <Route path="invite/:uuid" element={<Invite />} />
                 <Route path="join" element={<Join/>} />
                 <Route path="live" element={<Live />} />
                 <Route path="login" element={<Login />} />
