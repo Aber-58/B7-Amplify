@@ -1,1 +1,4 @@
 /state
+*__pycache__*
+.gitignore
+
