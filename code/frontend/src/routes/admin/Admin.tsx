@@ -96,12 +96,28 @@ function Admin() {
                                         <span className="font-semibold text-lg">{topicData.content}</span>
                                     </button>
 
-                                    <button
-                                        onClick={() => triggerCluster(uuid)}
-                                        className="text-sm px-2 py-1 border rounded-lg hover:bg-gray-100 transition"
-                                    >
-                                        Start Cluster
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => navigation(`${Navigation.INVITE}/${uuid}`)}
+                                            className="text-sm px-2 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+                                            title="View QR Code"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M3 11h8V3H3v8zm2-6h4v4H5V5z"/>
+                                                <path d="M3 21h8v-8H3v8zm2-6h4v4H5v-4z"/>
+                                                <path d="M13 3v8h8V3h-8zm6 6h-4V5h4v4z"/>
+                                                <path d="M19 13h2v2h-2zM19 17h2v2h-2zM17 15h2v2h-2zM15 17h2v2h-2zM13 13h2v2h-2zM13 19h2v2h-2z"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            className="text-sm px-2 py-2 border rounded-lg hover:bg-gray-100 transition"
+                                            title="Start Cluster"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {open && (
