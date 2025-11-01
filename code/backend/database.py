@@ -128,7 +128,7 @@ def insert_raw_opinion(username: str, uuid: int, opinion: str, weight: int):
 def insert_clustered_opinion(ai_gen_heading: str, uuid: int, leader_id: str):
     query_wrapper("""
         INSERT INTO ClusteredOpinion (ai_gen_heading, uuid, leader_id)
-        VALUES (?, ?);
+        VALUES (?, ?, ?);
     """, ai_gen_heading, uuid, leader_id)
 
 
