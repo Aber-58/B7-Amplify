@@ -1,6 +1,8 @@
 from flask import Flask
+from pages import routes
 
 app = Flask(__name__)
+app.register_blueprint(routes)
 
 @app.route('/')
 def home():
