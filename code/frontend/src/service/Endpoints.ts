@@ -5,5 +5,7 @@ export enum Endpoints {
     JOIN='join',
     POLL='poll',
     TOPIC='topic',
-    LIVE='live'
+    LIVE='live',
+    CLUSTERS='clusters',
+    CLUSTER='trigger_clustering'
 }

@@ -86,7 +86,6 @@ def init(db_path=db_file):
     """)
 
     conn.commit()
-    conn.close()
 
     # ---------- ChatMessage ----------
     c.execute("""

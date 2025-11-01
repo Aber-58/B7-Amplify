@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {createTopic, handleError, getAllOpinions} from "../../service/fetchService";
+import {createTopic, handleError, getAllOpinions, getClusters, triggerCluster} from "../../service/fetchService";
 import {useNavigate} from "react-router";
 import {Navigation} from "../Navigation";
 
@@ -7,6 +7,7 @@ function Admin() {
     const [topic, setTopic] = useState("");
     const [allOpinions, setAllOpinions] = useState<any>({});
     const [openTopics, setOpenTopics] = useState<{ [uuid: string]: boolean }>({});
+    const [clusters, setClusters] = useState<{ [uuid: string]: any }>({});
     let navigation = useNavigate();
 
     function sendCreateTopic() {
@@ -18,7 +19,7 @@ function Admin() {
     }
 
     useEffect(() => {
-        getAllOpinions("")
+        getAllOpinions()
             .then(data => {
                 setAllOpinions(data.opinions || {});
             })
@@ -30,6 +31,31 @@ function Admin() {
             ...prev,
             [uuid]: !prev[uuid]
         }));
+
+        if (!clusters[uuid]) {
+            getClusters(uuid)
+                .then(data => {
+                    setClusters(prev => ({
+                        ...prev,
+                        [uuid]: data.clusters || []
+                    }));
+                })
+                .catch(err => console.error(err));
+        }
+    }
+
+    function getClusterIdForOpinion(uuid: string, opinion: string, username: string): number | null {
+        const topicClusters = clusters[uuid];
+        if (!topicClusters) return null;
+
+        for (const cluster of topicClusters) {
+            for (const rawOpinion of cluster.raw_opinions) {
+                if (rawOpinion.opinion === opinion && rawOpinion.username === username) {
+                    return cluster.cluster_id;
+                }
+            }
+        }
+        return null;
     }
 
     return (
@@ -70,23 +96,54 @@ function Admin() {
                                         <span className="font-semibold text-lg">{topicData.content}</span>
                                     </button>
 
-                                    <button
-                                        className="text-sm px-2 py-1 border rounded-lg hover:bg-gray-100 transition"
-                                    >
-                                        Start Cluster
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => navigation(`${Navigation.INVITE}/${uuid}`)}
+                                            className="text-sm px-2 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition"
+                                            title="View QR Code"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M3 11h8V3H3v8zm2-6h4v4H5V5z"/>
+                                                <path d="M3 21h8v-8H3v8zm2-6h4v4H5v-4z"/>
+                                                <path d="M13 3v8h8V3h-8zm6 6h-4V5h4v4z"/>
+                                                <path d="M19 13h2v2h-2zM19 17h2v2h-2zM17 15h2v2h-2zM15 17h2v2h-2zM13 13h2v2h-2zM13 19h2v2h-2z"/>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            className="text-sm px-2 py-2 border rounded-lg hover:bg-gray-100 transition"
+                                            onClick={() => triggerCluster(uuid)}
+                                            title="Start Cluster"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                                <circle cx="3.5" cy="4.2" r="1"/>
+                                                <circle cx="12.3" cy="3.8" r="1"/>
+                                                <circle cx="8.1" cy="11.7" r="1"/>
+                                                <circle cx="3.5" cy="4.2" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                                                <circle cx="12.3" cy="3.8" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                                                <circle cx="8.1" cy="11.7" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {open && (
                                     <div className="mt-4 grid gap-3">
                                         {topicData.opinions.map((opTuple: any[], i: number) => {
                                             const [opinion, weight, username] = opTuple;
+                                            const clusterId = getClusterIdForOpinion(uuid, opinion, username);
                                             return (
                                                 <div
                                                     key={i}
                                                     className="p-3 border rounded-lg bg-gray-50 shadow-sm"
                                                 >
-                                                    <div className="font-medium text-gray-800">{opinion}</div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="font-medium text-gray-800 flex-1">{opinion}</div>
+                                                        {clusterId !== null && (
+                                                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                                                Cluster {clusterId}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="text-sm text-gray-600">
                                                         {username} — Gewicht: {weight}
                                                     </div>
