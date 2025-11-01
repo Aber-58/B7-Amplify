@@ -18,6 +18,17 @@ function Poll() {
     }, [uuid])
 
     function submitOpinion() {
+        // Validation
+        if (!opinion.trim()) {
+            alert("Please enter your opinion before submitting.");
+            return;
+        }
+        
+        if (rating < 1 || rating > 10) {
+            alert("Please enter a rating between 1 and 10.");
+            return;
+        }
+        
         if (uuid) {
             createOpinion(uuid, opinion, rating).then(() => navigate(`${Navigation.LIVE}/${uuid}`))
                 .catch(error => handleError(error, () => navigate((Navigation.ERROR))))
