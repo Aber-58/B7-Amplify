@@ -54,6 +54,21 @@ topic_state_mapper = {
     3: "result"
 }
 
+@routes.route('/topic/<uuid_param>', methods=['GET'])
+def get_topic(uuid_param):
+    result = db.get_content_by_uuid(uuid_param)
+    
+    if not result:
+        return {"error": "Topic not found"}, 404
+    
+    topic_content = result[0]
+    topic_state = result[1]
+    
+    return {
+        "topic": topic_content,
+        "state": topic_state_mapper[topic_state]
+    }
+
 @routes.route('/join/<uuid_param>', methods=['POST'])
 def join(uuid_param):
     

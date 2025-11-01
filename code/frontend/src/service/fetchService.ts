@@ -56,6 +56,18 @@ export function createOpinion(uuid: string, opinion: string, rating: number): Pr
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
 
+export function getTopicInfo(uuid: string): Promise<{topic: string, state: string}> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.TOPIC}/${uuid}`, {
+        method: 'GET',
+        headers: JSON_HEADER,
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText)
+    })
+}
+
 export function handleError(errorText: string, callback: () => void) {
     alert(errorText)
     callback()
