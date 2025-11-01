@@ -5,7 +5,7 @@ function Invite() {
     let { uuid } = useParams();
 
     function createInviteUrl() {
-        return `${window.location.href}/join/${uuid}`;
+        return `${window.location.host}/join/${uuid}`;
     }
     return <>
         <h1>Invite</h1>
