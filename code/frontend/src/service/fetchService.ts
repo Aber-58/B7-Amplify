@@ -30,7 +30,7 @@ export function validateSession(): Promise<void> {
     return fetch(`${API_ENDPOINT}/${Endpoints.VALIDATE}`, {
         method: 'GET',
         headers: JSON_HEADER,
-        credentials: 'same-origin',
+        credentials: 'include',
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
 
