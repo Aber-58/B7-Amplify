@@ -177,7 +177,7 @@ def get_content_by_uuid(uuid: int) -> tuple|None: # (content, state, deadline)
 
     c.execute("""
         SELECT content, current_state, deadline FROM Topics
-        WHERE session_id = ?;
+        WHERE uuid = ?;
     """, (uuid,))
 
     row = c.fetchone()
