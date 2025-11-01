@@ -3,7 +3,7 @@ import {useNavigate, useParams} from "react-router";
 import {Navigation} from "../Navigation";
 
 function Join() {
-    let { uuid } = useParams();
+    let {uuid} = useParams();
     let navigate = useNavigate();
 
     validateSession().then(() => navigate(`${Navigation.POLL}/${uuid}`)).catch(() => {

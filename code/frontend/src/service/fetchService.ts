@@ -1,6 +1,6 @@
 // TODO: dont hardcode the API url :/
 import {Endpoints} from "./Endpoints";
-import {TopicResponse} from "./model/TopicResponse";
+import {JoinResponse, TopicResponse} from "./model/TopicResponse";
 
 const API_ENDPOINT = `http://localhost:4200/api`;
 const JSON_HEADER = { 'Content-Type': 'application/json' };
@@ -32,6 +32,19 @@ export function validateSession(): Promise<void> {
         headers: JSON_HEADER,
         credentials: 'same-origin',
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
+}
+
+export function joinSession(uuid: string): Promise<JoinResponse> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.JOIN}/${uuid}`, {
+        method: 'POST',
+        headers: JSON_HEADER,
+        credentials: 'same-origin',
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText)
+    })
 }
 
 export function handleError(errorText: string, callback: () => void) {
