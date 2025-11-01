@@ -59,7 +59,7 @@ def cluster_raw_opinions(raw_opinions):
 
     texts = [opinion['opinion'] for opinion in raw_opinions]
 
-    model = SentenceTransformer('tencent/Youtu-Embedding', trust_remote_code=True)
+    model = SentenceTransformer('tencent/Youtu-Embedding', trust_remote_code=True, cache_folder='/state')
     embeddings = model.encode([f"clustering: {text}" for text in texts])
 
     clusterer = DBSCAN(eps=0.5, min_samples=2, metric="manhattan")
