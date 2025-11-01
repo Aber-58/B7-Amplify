@@ -35,7 +35,6 @@ def admin():
 # maybe a useless functionality
 @routes.route('/validate', methods=['GET'])
 def validate():
-
     session_cookie = request.cookies.get("sessionCookie")
 
     if not session_cookie:
@@ -66,18 +65,18 @@ def join(uuid_param):
     result = db.get_content_by_uuid(uuid_param)
     topic_content = result[0]
     topic_state = result[1]
-    topic_deadline = result[2]
+    # topic_deadline = result[2]
 
     username = db.get_username_by_session_id(session_cookie)
 
     # deadline is not met yet
-    if state == 0 and db.raw_opinion_submitted(uuid_param, username):
-        state = 1
+    if topic_state == 0 and db.raw_opinion_submitted(uuid_param, username):
+        topic_state = 1
 
     # ResponseBody
     return {
         "topic": topic_content,
-        "state": topic_state_mapper[state],
+        "state": topic_state_mapper[topic_state],
         "username": username
     }
 

@@ -14,15 +14,19 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Flask
-RUN pip install --no-cache-dir Flask scikit-learn torch transformers einops huggingface_hub sentence-transformers
+WORKDIR /app
 
-# Install Deno
+COPY requirements.txt /app
+
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get install -y nodejs
 
-# Repo
-WORKDIR /app
+RUN npm install --package-json /app/code/frontend/package.json
+
+RUN npm run --prefix /app/code/frontend build
+
 # State
 RUN mkdir -p /state
 

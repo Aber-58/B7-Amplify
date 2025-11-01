@@ -3,6 +3,7 @@ FLASK_PORT = port = os.getenv("FLASK_PORT")
 from flask import Flask, send_from_directory
 from pages import routes
 from flask_cors import CORS
+import database as db
 
 app = Flask(__name__, static_folder='../frontend/build', static_url_path='')
 app.register_blueprint(routes, url_prefix='/api')
@@ -21,4 +22,5 @@ def not_found(e):
     return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
+    db.init_db()
     app.run(host='0.0.0.0', port=FLASK_PORT)
