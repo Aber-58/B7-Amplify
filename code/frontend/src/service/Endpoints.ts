@@ -1,4 +1,5 @@
 export enum Endpoints {
     LOGIN='login',
-    ADMIN='admin'
+    ADMIN='admin',
+    VALIDATE='validate'
 }

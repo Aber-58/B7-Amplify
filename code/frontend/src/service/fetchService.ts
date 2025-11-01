@@ -26,6 +26,13 @@ export function createTopic(topic: string): Promise<TopicResponse> {
     })
 }
 
+export function validateSession(): Promise<void> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.VALIDATE}`, {
+        method: 'GET',
+        headers: JSON_HEADER,
+    }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
+}
+
 export function handleError(errorText: string, callback: () => void) {
     alert(errorText)
     callback()

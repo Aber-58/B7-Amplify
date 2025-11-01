@@ -1,16 +1,16 @@
 import {useState} from "react";
 import {handleError, loginUser} from "../../service/fetchService";
-import {useNavigate} from "react-router";
+import {useNavigate, useParams} from "react-router";
 import {Navigation} from "../Navigation";
 
 function Login() {
-
+    const {uuid} = useParams();
     const [username, setUsername] = useState("")
     let navigate = useNavigate();
 
     function sendLogin() {
         return loginUser(username).then((() => {
-            navigate(Navigation.POLL)
+            navigate(`${Navigation.POLL}/${uuid}`);
         })).catch(error => handleError(error, () => navigate((Navigation.ERROR))))
     }
 

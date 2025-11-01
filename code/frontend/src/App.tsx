@@ -17,7 +17,7 @@ function App() {
             <Route path={`${Navigation.INVITE}/:uuid`} element={<Invite/>}/>
             <Route path={`${Navigation.JOIN}/:uuid`} element={<Join/>}/>
             <Route path={`${Navigation.LIVE}/:uuid`} element={<Live/>}/>
-            <Route path={Navigation.LOGIN} element={<Login/>}/>
+            <Route path={`${Navigation.LOGIN}/:uuid`} element={<Login/>}/>
             <Route path={`${Navigation.POLL}/:uuid`} element={<Poll/>}/>
             <Route path={`${Navigation.ERROR}`} element={<Error/>}/>
             <Route path="*"
