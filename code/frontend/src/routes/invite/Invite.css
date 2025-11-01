@@ -8,13 +8,27 @@
 }
 
 .invite-container h1 {
-    color: #005b8f;
+    color: #000000;
+    position: relative;
+}
+
+
+.bg-circle {
+    display: flex;
+    height: 650px;
+    width: 650px;
+    background-color: #00AAEF;
+    align-items: center;
+    border-radius: 50%;
+    position: absolute;
 }
 
 .qr-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: absolute;
+    offset-position: 50px;
     background: white;
     padding: 1.5rem;
     border-radius: 1rem;
