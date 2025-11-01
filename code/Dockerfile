@@ -29,6 +29,4 @@ RUN pip install --no-cache-dir -e git+https://github.com/shoeffner/Flask-Websock
 RUN mkdir -p /state
 EXPOSE 4200
 
-#CMD ["python", "/app/backend/app.py"]
-CMD ["/bin/bash", "-c", "source /app/env.source && exec python /app/backend/app.py"]
-#CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]
+CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]

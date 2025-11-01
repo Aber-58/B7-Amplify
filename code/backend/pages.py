@@ -1,9 +1,29 @@
 from flask import Blueprint, request, make_response
 import uuid
-import database as db
 import time
 
+import database as db
+import opinion_clustering
+
 routes = Blueprint('routes', __name__)
+
+def rate_limit(seconds):
+    def decorator(func):
+        func._last_call = 0
+        def wrapper(*args, **kwargs):
+            current_time = time.time()
+            time_since_last = current_time - func._last_call
+
+            if time_since_last < seconds:
+                remaining = seconds - time_since_last
+                resp = make_response({"error": "Rate limited", "retry_after": remaining}, 429)
+                resp.headers['Retry-After'] = str(int(remaining) + 1)
+                return resp
+
+            func._last_call = current_time
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 @routes.route('/status')
@@ -136,10 +156,8 @@ def poll(uuid_param):
     return {"message": "Poll response recorded"}
 
 
-
 @routes.route('/live/<uuid_param>', methods=['GET'])
 def live(uuid_param):
-
     # RequestHeader
     session_cookie = request.cookies.get("sessionCookie")
 
@@ -156,3 +174,10 @@ def error():
     return {
         "isLeader": is_leader
     }
+
+
+@routes.route('/trigger_clustering/<uuid_param>', methods=['POST'])
+@rate_limit(1.0)
+def trigger_clustering(uuid_param):
+    opinion_clustering.trigger(uuid_param)
+    return {"status": "success", "cooldown": 1.0}
