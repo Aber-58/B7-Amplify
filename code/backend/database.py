@@ -88,6 +88,19 @@ def init(db_path=db_file):
     conn.commit()
     conn.close()
 
+    # ---------- ChatMessage ----------
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS ChatMessage (
+        id TEXT PRIMARY KEY,
+        message TEXT NOT NULL,
+        timestamp INTEGER NOT NULL
+    );
+    """)
+
+    conn.commit()
+    conn.close()
+
+
 #------- INSERTS ---------
 
 def query_wrapper(query: str, *parameters):
@@ -382,3 +395,33 @@ def get_clustered_opinions_with_raw_opinions(topic_uuid: str) -> list:
 
     return list(clusters.values())
 
+def insert_chat_message(message_id: str, message: str, timestamp: int):
+    """Insert a chat message"""
+    query_wrapper("""
+        INSERT INTO ChatMessage
+        (id, message, timestamp)
+        VALUES (?, ?, ?);
+    """, message_id, message, timestamp)
+
+
+def get_chat_messages(limit: int = 100) -> list:
+    """Get all chat messages ordered by timestamp, with optional limit"""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    c.execute("""
+        SELECT id, message, timestamp
+        FROM ChatMessage
+        ORDER BY timestamp ASC
+        LIMIT ?;
+    """, (limit,))
+
+    rows = c.fetchall()
+    conn.close()
+
+    return [{
+        "id": row[0],
+        "message": row[1],
+        "timestamp": row[2]
+    } for row in rows]
