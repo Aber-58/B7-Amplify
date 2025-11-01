@@ -14,24 +14,24 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -y nodejs
+
 WORKDIR /app
 
 COPY requirements.txt /app
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
-    apt-get install -y nodejs
+COPY frontend /app/frontend
+COPY backend /app/backend
+COPY env.source /app
 
-RUN npm install --package-json /app/code/frontend/package.json
-
-RUN npm run --prefix /app/code/frontend build
-
-# State
+RUN npm --prefix /app/frontend install
+RUN npm --prefix /app/frontend run build
 RUN mkdir -p /state
-
-# Expose Flask default port
 EXPOSE 4200
 
-# Default command (interactive shell)
-CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]
+#CMD ["python", "/app/backend/app.py"]
+CMD ["/bin/bash", "-c", "source /app/env.source && exec python /app/backend/app.py"]
+#CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]
