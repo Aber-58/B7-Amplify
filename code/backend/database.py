@@ -25,7 +25,7 @@ def init_db(db_path=db_file):
     # deadline is unix timestamp (int)
     c.execute("""
     CREATE TABLE IF NOT EXISTS Topics (
-        uuid INTEGER PRIMARY KEY,
+        uuid TEXT PRIMARY KEY,
         content TEXT NOT NULL,
         current_state INTEGER,
         deadline INTEGER
@@ -37,7 +37,7 @@ def init_db(db_path=db_file):
     CREATE TABLE IF NOT EXISTS RawOpinion (
         raw_id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
-        uuid INTEGER NOT NULL,
+        uuid TEXT NOT NULL,
         opinion TEXT,
         weight INTEGER,
         FOREIGN KEY(username) REFERENCES User(username),
@@ -49,7 +49,7 @@ def init_db(db_path=db_file):
     c.execute("""
     CREATE TABLE IF NOT EXISTS ClusteredOpinion (
         cluster_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid INTEGER NOT NULL,
+        uuid TEXT NOT NULL,
         ai_gen_heading TEXT,
         leader_id TEXT,
         FOREIGN KEY(leader_id) REFERENCES User(username),
@@ -73,7 +73,7 @@ def init_db(db_path=db_file):
     # One vote per (uuid, user)
     c.execute("""
     CREATE TABLE IF NOT EXISTS LeaderVote (
-        uuid INTEGER,
+        uuid TEXT,
         username TEXT,
         clustered_opinion_id INTEGER,
         PRIMARY KEY (uuid, username),
@@ -110,7 +110,7 @@ def insert_user(username: str, session_id: str):
             VALUES (?, ?);
         """, username, session_id)
     
-def insert_topic(uuid: int, content: str, deadline: int):
+def insert_topic(uuid: str, content: str, deadline: int):
     query_wrapper("""
         INSERT OR REPLACE INTO Topics (uuid, content current_state, deadline)
         VALUES (?, ?, ?);

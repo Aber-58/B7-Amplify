@@ -20,7 +20,7 @@ def admin():
     if not topic:
         return {"error": "topic is required"}, 400
 
-    topic_uuid = int(uuid.uuid4())
+    topic_uuid = str(uuid.uuid4())
 
     # TODO adjust deadline 
     deadline = int(time.time()) + 10*60 # 10 min
