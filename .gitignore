@@ -1,1 +1,6 @@
 /state
+*__pycache__*
+.gitignore
+
+*ipynb
+*temp.py
