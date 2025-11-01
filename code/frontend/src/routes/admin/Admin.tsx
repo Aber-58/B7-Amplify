@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {createTopic, handleError, getAllOpinions, getClusters} from "../../service/fetchService";
+import {createTopic, handleError, getAllOpinions, getClusters, triggerCluster} from "../../service/fetchService";
 import {useNavigate} from "react-router";
 import {Navigation} from "../Navigation";
 
@@ -19,7 +19,7 @@ function Admin() {
     }
 
     useEffect(() => {
-        getAllOpinions("")
+        getAllOpinions()
             .then(data => {
                 setAllOpinions(data.opinions || {});
             })
@@ -97,6 +97,7 @@ function Admin() {
                                     </button>
 
                                     <button
+                                        onClick={() => triggerCluster(uuid)}
                                         className="text-sm px-2 py-1 border rounded-lg hover:bg-gray-100 transition"
                                     >
                                         Start Cluster

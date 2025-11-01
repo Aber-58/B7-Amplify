@@ -59,7 +59,7 @@ export function createOpinion(uuid: string, opinion: string, rating: number): Pr
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
 
-export function getAllOpinions(uuid: string): Promise<AllTopicOpinions> {
+export function getAllOpinions(): Promise<AllTopicOpinions> {
     return fetch(`${API_ENDPOINT}/${Endpoints.ADMIN}`, {
         method: 'GET',
         headers: JSON_HEADER,
@@ -111,4 +111,16 @@ export function getClusters(uuid: string) {
 export function handleError(errorText: string, callback: () => void) {
     alert(errorText)
     callback()
+}
+
+export function triggerCluster(uuid: string): Promise<{status: string, cooldown: number}> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.CLUSTER}/${uuid}`, {
+        method: 'POST',
+        headers: JSON_HEADER,
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText);
+    });
 }
