@@ -3,13 +3,50 @@
 all text/html
 
 - admin panel: /admin
+- POST:
+    - RequestBody:
+        - { topics: string } // von Admin angebebene topics
+    - ResponseBody:
+        - { uuid: string } // UUID der Umfrage
+
 
 - qr code: join/<uuidv4>
+- POST:
+    - RequestHeader:
+    - { sessionCookie } // von Admin angebebene topics
+    - RequestParameter:
+        - { uuid: string } // UUID der Umfrage
+    - ResponseBody:
+        - { topic: string, username: string } // UUID der Umfrage
 
-- enter username: /login/<uuidv4> (html form for username, gives session cookie)
+- enter username: /login (html form for username, gives session cookie)
+- POST:
+    - RequestBody:
+        - { username: string }
+    - ResponseHeader:
+        - { sessionCookie }
+
 - question: /poll/<uuidv4> (session cookie present)
-- loading: /loading/<uuidv4> (session cookie present) (polls api)
+- POST:
+    - RequestHeader:
+        - { sessionCookie }
+        - RequestParameter:
+            - { uuid: string }
+        - RequestBody:
+            - { opinion: string, rating: number}
 - live view: /live/<uuidv4>
+- GET:
+    - RequestHeader:
+        - { sessionCookie }
+        - RequestBody:
+            - { tbd, isLeader: true }
+- POST:
+    - RequestParameter:
+      - { uuid: string }
+    - RequestHeader:
+        - { sessionCookie }
+      - RequestBody:
+          - { tbd }
 
 ## Session state
 
