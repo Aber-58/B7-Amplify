@@ -11,10 +11,11 @@ RUN apt-get update && apt-get install -y \
     vim \
     curl \
     unzip \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Flask
-RUN pip install --no-cache-dir Flask
+RUN pip install --no-cache-dir Flask scikit-learn torch transformers einops huggingface_hub sentence-transformers
 
 # Install Deno
 RUN curl -fsSL curl -fsSL https://deno.land/install.sh | sh && \
