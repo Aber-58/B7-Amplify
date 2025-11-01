@@ -22,3 +22,8 @@ export function createTopic(topic: string): Promise<string> {
         return Promise.reject(res.statusText)
     })
 }
+
+export function handleError(errorText: string, callback: () => void) {
+    alert(errorText)
+    callback()
+}

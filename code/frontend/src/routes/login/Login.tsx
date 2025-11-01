@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {loginUser} from "../../service/fetchService";
+import {handleError, loginUser} from "../../service/fetchService";
 import {useNavigate} from "react-router";
 import {Navigation} from "../Navigation";
 
@@ -11,7 +11,7 @@ function Login() {
     function sendLogin() {
         return loginUser(username).then((() => {
             navigate(Navigation.POLL)
-        }));
+        })).catch(error => handleError(error, () => navigate((Navigation.ERROR))))
     }
 
     return <>

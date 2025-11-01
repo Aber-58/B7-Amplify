@@ -9,6 +9,7 @@ function Admin() {
     function sendCreateTopic() {
         createTopic(topic).then(uuid => {
             navigation(`${Navigation.INVITE}/${uuid}`);
+        }).catch(error => handleError(error, () => navigation((Navigation.ERROR))))
     }
 
     return <>
