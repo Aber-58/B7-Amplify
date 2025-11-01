@@ -111,10 +111,16 @@ function Admin() {
                                         </button>
                                         <button
                                             className="text-sm px-2 py-2 border rounded-lg hover:bg-gray-100 transition"
+                                            onClick={() => triggerCluster(uuid)}
                                             title="Start Cluster"
                                         >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                                <circle cx="3.5" cy="4.2" r="1"/>
+                                                <circle cx="12.3" cy="3.8" r="1"/>
+                                                <circle cx="8.1" cy="11.7" r="1"/>
+                                                <circle cx="3.5" cy="4.2" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                                                <circle cx="12.3" cy="3.8" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+                                                <circle cx="8.1" cy="11.7" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5"/>
                                             </svg>
                                         </button>
                                     </div>
