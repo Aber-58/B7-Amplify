@@ -55,7 +55,6 @@ def admin():
 
 @routes.route('/admin', methods=['GET'])
 def admin_get_opinion():
-    print("yjkfsdklf")
     raw_opinions = db.get_raw_opinions()
 
     opinion_dict = {}
