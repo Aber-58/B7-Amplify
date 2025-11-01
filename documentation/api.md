@@ -5,9 +5,9 @@ all text/html
 - admin panel: /admin
 - POST:
     - RequestBody:
-        - { topics: string } // von Admin angebebene topics
+        - { topic: string } // von Admin angebebene topics
     - ResponseBody:
-        - { uuid: string } // UUID der Umfrage
+        - { uuid: string, deadline: int } // UUID der Umfrage und deadline unix timestamp
 
 
 - qr code: join/<uuidv4>
@@ -17,7 +17,7 @@ all text/html
     - RequestParameter:
         - { uuid: string } // UUID der Umfrage
     - ResponseBody:
-        - { topic: string, username: string } // UUID der Umfrage
+        - { topic: string, state: string, username: string } // UUID der Umfrage, state siehe enum unten
 
 - enter username: /login (html form for username, gives session cookie)
 - POST:
@@ -38,7 +38,7 @@ all text/html
 - GET:
     - RequestHeader:
         - { sessionCookie }
-        - RequestBody:
+    - ResponseBody:
             - { tbd, isLeader: true }
 - POST:
     - RequestParameter:
@@ -50,7 +50,13 @@ all text/html
 
 ## Session state
 
-- current state: INIT -> QUESTION(topic id) -> LOADING(topic id) -> LIVE(is_leader, topic id) -> RESULT(topic id) -> INIT
+- current state: QUESTION(topic id) -> LOADING(topic id) -> LIVE(is_leader, topic id) -> RESULT(topic id) -> INIT
+
+enum:
+ - question
+ - loading
+ - live
+ - result
 
 # Database
 
@@ -58,7 +64,7 @@ User(**username**, session id)
 Topics(**uuid**, content, current_state, deadline)
 RawOpinion(**id**, username->User, topic->Topics, opinion, weigth)
 RawOpinionClusteredOpinion(**id**->RawOpinion, **id**->ClusteredOpinion)
-ClusteredOpinion(**id**, ai gen. heading, leader id->User)
+ClusteredOpinion(**id**, topic,->Topic ai gen. heading, leader id->User)
 
 LeaderChat(uuid->Topic, username->User, message)
 LeaderVote(uuid->Topic, username->User, id->ClusteredOpinion)

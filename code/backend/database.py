@@ -37,11 +37,11 @@ def init_db(db_path=db_file):
     CREATE TABLE IF NOT EXISTS RawOpinion (
         raw_id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
-        topic INTEGER NOT NULL,
+        uuid INTEGER NOT NULL,
         opinion TEXT,
         weight INTEGER,
         FOREIGN KEY(username) REFERENCES User(username),
-        FOREIGN KEY(topic) REFERENCES Topics(uuid)
+        FOREIGN KEY(uuid) REFERENCES Topics(uuid)
     );
     """)
 
@@ -49,11 +49,11 @@ def init_db(db_path=db_file):
     c.execute("""
     CREATE TABLE IF NOT EXISTS ClusteredOpinion (
         cluster_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        topic INTEGER NOT NULL,
+        uuid INTEGER NOT NULL,
         ai_gen_heading TEXT,
         leader_id TEXT,
         FOREIGN KEY(leader_id) REFERENCES User(username),
-        FOREIGN KEY(topic) REFERENCES Topics(uuid)
+        FOREIGN KEY(uuid) REFERENCES Topics(uuid)
 
     );
     """)
@@ -70,7 +70,7 @@ def init_db(db_path=db_file):
     """)
 
     # ---------- LeaderVote ----------
-    # One vote per (topic, user)
+    # One vote per (uuid, user)
     c.execute("""
     CREATE TABLE IF NOT EXISTS LeaderVote (
         uuid INTEGER,
@@ -118,11 +118,11 @@ def insert_topic(uuid: int, content: str, deadline: int):
     # after initialization the state must be the init state 0
 
 
-def insert_raw_opinion(username: str, topic: int, opinion: str, weight: int):
+def insert_raw_opinion(username: str, uuid: int, opinion: str, weight: int):
     query_wrapper("""
-        INSERT INTO RawOpinion (username, topic, opinion, weight)
+        INSERT INTO RawOpinion (username, uuid, opinion, weight)
         VALUES (?, ?, ?, ?);
-    """, username, topic, opinion, weight)
+    """, username, uuid, opinion, weight)
 
 
 def insert_clustered_opinion(ai_gen_heading: str, uuid: int, leader_id: str):
@@ -145,6 +145,13 @@ def insert_leader_vote(uuid: int, username: str, clustered_opinion_id: int):
         VALUES (?, ?, ?);
     """, uuid, username, clustered_opinion_id)
 
+def leader_vote(username: str, uuid: int, clustered_opinion_id: int):
+    if is_leader(username, uuid):
+        insert_leader_vote(uuid, username, clustered_opinion_id)
+    else:
+        print(f"Error. User {username} is not leader for topic {uuid}")
+
+
 #------- GETTER ---------
 
 def get_username_by_session_id(session_id: str) -> str|None:
@@ -162,7 +169,8 @@ def get_username_by_session_id(session_id: str) -> str|None:
 
     return row[0] if row else None
 
-def get_content_by_uuid(uuid: int) -> tuple|None:
+
+def get_content_by_uuid(uuid: int) -> tuple|None: # (content, state, deadline)
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -177,10 +185,34 @@ def get_content_by_uuid(uuid: int) -> tuple|None:
 
     return row if row else None
 
+def raw_opinion_submitted(uuid, username) -> bool:
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    c.execute("""
+        SELECT *
+        FROM RawOpinion 
+        WHERE username = ? AND uuid = ?;
+    """, (uuid, username))
+
+    exists = c.fetchone() is not None
+    conn.close()
+    return exists
 
 
-# Example usage:
-if __name__ == "__main__":
-    insert_user("alice", "session123")
+def is_leader(uuid: int, username: str) -> bool:
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
 
+    c.execute("""
+        SELECT *
+        FROM ClusteredOpinion 
+        WHERE uuid = ? AND leader_id = ?;
+    """, (uuid, username))
+
+    exists = c.fetchone() is not None
+    conn.close()
+    return exists
 
