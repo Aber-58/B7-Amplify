@@ -3,7 +3,7 @@ import uuid
 import random
 import database as db
 from sentence_transformers import SentenceTransformer
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN, HDBSCAN
 import numpy as np
 
 _worker_pool = None
@@ -62,7 +62,8 @@ def cluster_raw_opinions(raw_opinions):
     model = SentenceTransformer('tencent/Youtu-Embedding', trust_remote_code=True, cache_folder='/state')
     embeddings = model.encode([f"clustering: {text}" for text in texts])
 
-    clusterer = DBSCAN(eps=0.5, min_samples=2, metric="manhattan")
+    clusterer = HDBSCAN(min_samples=2, min_cluster_size=2, cluster_selection_method="leaf",
+                       allow_single_cluster=True, metric="cosine")
     labels = clusterer.fit_predict(embeddings)
 
     clusters = {}
