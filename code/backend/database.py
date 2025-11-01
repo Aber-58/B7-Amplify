@@ -336,3 +336,49 @@ def is_leader(uuid: int, username: str) -> bool:
     conn.close()
     return exists
 
+
+def get_clustered_opinions_with_raw_opinions(topic_uuid: str) -> list:
+    """Get all clustered opinions with their constituent raw opinions and users for a topic"""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    c.execute("""
+        SELECT 
+            co.cluster_id,
+            co.current_heading,
+            co.leader_id,
+            ro.raw_id,
+            ro.username,
+            ro.opinion,
+            ro.weight
+        FROM ClusteredOpinion co
+        LEFT JOIN RawOpinion ro ON co.cluster_id = ro.clustered_opinion_id
+        WHERE co.uuid = ?
+        ORDER BY co.cluster_id, ro.raw_id;
+    """, (topic_uuid,))
+
+    rows = c.fetchall()
+    conn.close()
+
+    clusters = {}
+    for row in rows:
+        cluster_id = row[0]
+        if cluster_id not in clusters:
+            clusters[cluster_id] = {
+                "cluster_id": cluster_id,
+                "heading": row[1],
+                "leader_id": row[2],
+                "raw_opinions": []
+            }
+        
+        if row[3] is not None:
+            clusters[cluster_id]["raw_opinions"].append({
+                "raw_id": row[3],
+                "username": row[4],
+                "opinion": row[5],
+                "weight": row[6]
+            })
+
+    return list(clusters.values())
+

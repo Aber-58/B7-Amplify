@@ -197,3 +197,16 @@ def live(uuid_param):
 def trigger_clustering(uuid_param):
     opinion_clustering.trigger(uuid_param)
     return {"status": "success", "cooldown": 1.0}
+
+
+@routes.route('/clusters/<uuid_param>', methods=['GET'])
+def get_clusters(uuid_param):
+    """Get all clustered opinions with their constituent raw opinions and users for a topic"""
+    
+    result = db.get_content_by_uuid(uuid_param)
+    if not result:
+        return {"error": "Topic not found"}, 404
+    
+    clusters = db.get_clustered_opinions_with_raw_opinions(uuid_param)
+    
+    return {"clusters": clusters}
