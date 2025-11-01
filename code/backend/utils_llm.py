@@ -45,6 +45,22 @@ def get_category_titles_prompt(texts, labels):
 
     return prompt
 
+def choose_proposed_solutions(user_solutions):
+    prompt = """You will receive a list of solution proposed by various users.
+    Out of the whole list, generate 3 solutions that are the most represented.
+    Your objective is to write a list with a very short title max 2 words for each of these topics. The format of your answer should be like a jason, yet skip using ` for formatting:
+    "Category <number>: \n <TItle>" for each of the categories. Write no additonal text.
+    
+    """ 
+    for cat, texts in grouped_texts.items():
+        prompt += f"\nCategory {cat}:"
+        prompt += ', '.join(texts)
+    pass
+    return prompt
+
+    
+
+
 
 # # Example
 # texts_with_cat = {
