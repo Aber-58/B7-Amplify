@@ -8,6 +8,7 @@ import Live from "./routes/live/Live";
 import Login from "./routes/login/Login";
 import Poll from "./routes/poll/Poll";
 import {Navigation} from "./routes/Navigation";
+import Error from "./routes/error/Error";
 
 function App() {
     return <>
@@ -18,6 +19,7 @@ function App() {
             <Route path={`${Navigation.LIVE}/:uuid`} element={<Live/>}/>
             <Route path={Navigation.LOGIN} element={<Login/>}/>
             <Route path={`${Navigation.POLL}/:uuid`} element={<Poll/>}/>
+            <Route path={`${Navigation.ERROR}`} element={<Error/>}/>
             <Route path="*"
                    element={<Navigate to={Navigation.ADMIN} replace/>}/>
         </Routes>
