@@ -40,13 +40,13 @@ def get_category_titles_prompt(texts, labels):
     
     """ 
     for cat, texts in grouped_texts.items():
-        prompt += "\nCategory {cat}:"
+        prompt += f"\nCategory {cat}:"
         prompt += ', '.join(texts)
 
     return prompt
 
 
-## Example usage
+# # Example
 # texts_with_cat = {
 #     "texts": [
 #         "The food is bad and I'm allergic", "The spaghetti aren't well cooked", 'I do not like the food', "The coffee machine doesn't work", 'The kitchen is always too hot or too cold', "I've found mold in the fridge", "I'm allergic to something in the cafeteria", 'The lunch break is too short', "The shower doesn't have enough pressure", 'The shower is dirty', "The water isn't hot enough in the shower", "I don't like the bathroom layout", "There's no soap in the restroom", 'I like my co-worker Jeff', 'I get harassed in the shower by my coworkers', 'My boss is a prick', 'I get too many emails about work during my free time', 'My co-worker often interrupts me in meetings', "I've noticed a coworker stealing office supplies", 'The office dress code is too restrictive', 'I have to walk 30 minutes from the train station', "There aren't enough parking spaces", 'My commute is too long and tiring', 'The bus is always late', 'The car park is overcrowded', 'The elevator breaks down frequently', 'The parking lot is poorly lit at night', 'My bike is damaged in the parking area', "The chairs aren't comfortable", 'My PC is slow', "I'm pretty sure my desk changes height over night", 'I want a new chair because my doctor told me I need one', 'My laptop is slow', 'My chair causes back pain', 'The PC monitor is too small', 'The keyboard is old and sticky', 'I need a new mouse because the current one is broken', "The security isn't good enough", 'The security guard sleeps in his chair', "The company doesn't provide enough safety training", 'The front door is always unlocked', "The security cameras don't work in certain areas", "The company doesn't have a clear emergency plan", "The fire alarm system doesn't work properly", "I've seen unauthorized people in the office building"
