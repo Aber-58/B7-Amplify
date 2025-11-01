@@ -38,17 +38,16 @@ def worker_process(task_queue):
             winners = pick_random_winners(clusters)
             print(f"Selected {len(winners)} cluster leaders")
 
-            for winner_data in winners:
-                cluster_id = db.insert_clustered_opinion(
-                    current_heading=winner_data['winner']['opinion'],
-                    uuid=topic_uuid,
-                    leader_id=winner_data['username']
-                )
+            clusters_data = [{
+                'heading': winner_data['winner']['opinion'],
+                'leader_id': winner_data['username'],
+                'raw_opinions': winner_data['cluster']
+            } for winner_data in winners]
 
-                for raw_opinion in winner_data['cluster']:
-                    db.update_raw_opinion_cluster(raw_opinion['raw_id'], cluster_id)
+            cluster_ids = db.replace_clusters_for_topic(clusters_data, topic_uuid)
 
-                print(f"Created cluster {cluster_id} with leader {winner_data['username']} and {len(winner_data['cluster'])} opinions")
+            for i, cluster_id in enumerate(cluster_ids):
+                print(f"Created cluster {cluster_id} with leader {clusters_data[i]['leader_id']} and {len(clusters_data[i]['raw_opinions'])} opinions")
 
         except Exception as e:
             print(f"Worker error processing {topic_uuid}: {e}")
@@ -78,8 +77,14 @@ def pick_random_winners(clusters):
     winners = []
     for cluster in clusters:
         if cluster:
-            random_winner = random.choice(cluster)
+            weights = np.array([opinion['weight'] for opinion in cluster])
+
+            exp_weights = np.exp(weights)
+            probabilities = exp_weights / np.sum(exp_weights)
+            winner_idx = np.random.choice(len(cluster), p=probabilities)
+            random_winner = cluster[winner_idx]
             username = random_winner['username']
+
             winners.append({
                 'cluster': cluster,
                 'winner': random_winner,

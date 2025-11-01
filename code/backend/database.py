@@ -145,12 +145,6 @@ def insert_raw_opinion(username: str, uuid: int, opinion: str, weight: int):
     """, username, uuid, opinion, weight)
 
 
-def insert_clustered_opinion(current_heading: str, uuid: int, leader_id: str) -> int:
-    """Insert clustered opinion and return the cluster_id"""
-    return query_wrapper_with_lastrowid("""
-        INSERT INTO ClusteredOpinion (current_heading, uuid, leader_id)
-        VALUES (?, ?, ?);
-    """, current_heading, uuid, leader_id)
 
 
 def insert_map_raw_to_clustered(raw_opinion_id: int, clustered_opinion_id: int):
@@ -180,6 +174,70 @@ def update_raw_opinion_cluster(raw_id: int, clustered_opinion_id: int):
         SET clustered_opinion_id = ?
         WHERE raw_id = ?;
     """, clustered_opinion_id, raw_id)
+
+
+def replace_clusters_for_topic(clusters_data: list, topic_uuid: str) -> list:
+    """Delete old clusters and insert new clusters"""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    cluster_ids = []
+
+    try:
+        # Delete old clusters
+        # Reset clustered_opinion_id in RawOpinion table
+        c.execute("""
+            UPDATE RawOpinion
+            SET clustered_opinion_id = NULL
+            WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        # Delete from RawOpinionClusteredOpinion mapping table
+        c.execute("""
+            DELETE FROM RawOpinionClusteredOpinion
+            WHERE clustered_opinion_id IN (
+                SELECT cluster_id FROM ClusteredOpinion WHERE uuid = ?
+            );
+        """, (topic_uuid,))
+
+        # Delete leader votes for this topic
+        c.execute("""
+            DELETE FROM LeaderVote WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        # Delete clustered opinions
+        c.execute("""
+            DELETE FROM ClusteredOpinion WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        # Insert new clusters
+        for cluster_data in clusters_data:
+            # Insert clustered opinion
+            c.execute("""
+                INSERT INTO ClusteredOpinion (current_heading, uuid, leader_id)
+                VALUES (?, ?, ?);
+            """, (cluster_data['heading'], topic_uuid, cluster_data['leader_id']))
+
+            cluster_id = c.lastrowid
+            cluster_ids.append(cluster_id)
+
+            # Update raw opinions to reference this cluster
+            for raw_opinion in cluster_data['raw_opinions']:
+                c.execute("""
+                    UPDATE RawOpinion
+                    SET clustered_opinion_id = ?
+                    WHERE raw_id = ?;
+                """, (cluster_id, raw_opinion['raw_id']))
+
+        conn.commit()
+        return cluster_ids
+    except sqlite3.Error as e:
+        conn.rollback()
+        print("Database error:", e)
+        raise e
+    finally:
+        conn.close()
 
 
 #------- GETTER ---------
