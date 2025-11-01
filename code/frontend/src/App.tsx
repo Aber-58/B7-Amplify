@@ -1,23 +1,24 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
+import {Route, Routes} from "react-router";
+import Admin from "./routes/admin/Admin";
+import Invite from "./routes/invite/Invite";
+import Join from "./routes/join/Join";
+import Live from "./routes/live/Live";
+import Login from "./routes/login/Login";
+import Poll from "./routes/poll/Poll";
 
 function App() {
-    function testAPI() {
-        fetch("/api/status").then(data => data.text()).then((text) => alert(`From Backend: ${text}`))
-    }
-
-    return (
-        <div className="App">
-            <header className="App-header">
-                <img src={logo} className="App-logo" alt="logo"/>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to reload.
-                </p>
-                <button onClick={() => testAPI()}>Check Backend Connection</button>
-            </header>
-        </div>
-    );
+    return <>
+        <Routes>
+                <Route path="admin" element={<Admin />} />
+                <Route path="invite" element={<Invite />} />
+                <Route path="join" element={<Join/>} />
+                <Route path="live" element={<Live />} />
+                <Route path="login" element={<Login />} />
+                <Route path="poll" element={<Poll />} />
+        </Routes>
+    </>
 }
 
 export default App;
