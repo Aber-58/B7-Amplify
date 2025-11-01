@@ -306,6 +306,21 @@ def raw_opinion_submitted(uuid, username) -> bool:
     return exists
 
 
+def get_raw_opinions() -> list:
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    c.execute("""
+        SELECT uuid, content, opinion, username, weight
+        FROM RawOpinion join Topics using(uuid);
+    """)
+
+    result = c.fetchall()
+    conn.close()
+    return result
+
+
 def is_leader(uuid: int, username: str) -> bool:
     conn = sqlite3.connect(db_file)
     c = conn.cursor()

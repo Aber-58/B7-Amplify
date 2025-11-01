@@ -51,6 +51,26 @@ def admin():
     # ResponseBody
     return {"uuid": topic_uuid, "deadline": deadline}
 
+@routes.route('/admin', methods=['GET'])
+def admin_get_opinion():
+    print("yjkfsdklf")
+    raw_opinions = db.get_raw_opinions()
+
+    opinion_dict = {}
+
+    for (uuid, content, opinion, username, weight) in raw_opinions:
+        if uuid not in opinion_dict:
+            opinion_dict[uuid] = {
+                "content": content,
+                "opinions": [(opinion, weight, username)]
+            }
+        else:
+            opinion_dict[uuid]["opinions"].append((opinion, weight, username))
+
+    print(opinion_dict)
+
+    return {"opinions": opinion_dict}
+
 
 # maybe a useless functionality
 @routes.route('/validate', methods=['GET'])

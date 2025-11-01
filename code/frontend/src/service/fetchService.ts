@@ -1,6 +1,6 @@
 // TODO: dont hardcode the API url :/
 import {Endpoints} from "./Endpoints";
-import {JoinResponse, TopicResponse} from "./model/TopicResponse";
+import {JoinResponse, TopicResponse, AllTopicOpinions} from "./model/TopicResponse";
 
 const API_ENDPOINT = `http://localhost:4200/api`;
 const JSON_HEADER = {'Content-Type': 'application/json'};
@@ -54,6 +54,18 @@ export function createOpinion(uuid: string, opinion: string, rating: number): Pr
         credentials: 'same-origin',
         body: JSON.stringify({opinion, rating})
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
+}
+
+export function getAllOpinions(uuid: string): Promise<AllTopicOpinions> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.ADMIN}`, {
+        method: 'GET',
+        headers: JSON_HEADER,
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText);
+    });
 }
 
 export function getTopicInfo(uuid: string): Promise<{topic: string, state: string}> {
