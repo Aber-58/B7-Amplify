@@ -13,11 +13,11 @@ function App() {
     return <>
         <Routes>
             <Route path={Navigation.ADMIN} element={<Admin/>}/>
-            <Route path={Navigation.INVITE} element={<Invite/>}/>
-            <Route path={Navigation.JOIN} element={<Join/>}/>
-            <Route path={Navigation.LIVE} element={<Live/>}/>
+            <Route path={`${Navigation.INVITE}/:uuid`} element={<Invite/>}/>
+            <Route path={`${Navigation.JOIN}/:uuid`} element={<Join/>}/>
+            <Route path={`${Navigation.LIVE}/:uuid`} element={<Live/>}/>
             <Route path={Navigation.LOGIN} element={<Login/>}/>
-            <Route path={Navigation.POLL} element={<Poll/>}/>
+            <Route path={`${Navigation.POLL}/:uuid`} element={<Poll/>}/>
             <Route path="*"
                    element={<Navigate to={Navigation.ADMIN} replace/>}/>
         </Routes>

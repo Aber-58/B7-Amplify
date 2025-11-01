@@ -1,8 +1,9 @@
 export enum Navigation {
     ADMIN = '/admin',
-    INVITE = '/invite/:uuid',
-    JOIN = '/join/:uuid',
-    LIVE = '/live/:uuid',
+    INVITE = '/invite',
+    JOIN = '/join',
+    LIVE = '/live',
     LOGIN = '/login',
-    POLL = '/poll/:uuid',
+    POLL = '/poll',
+    ERROR = '/error',
 }
