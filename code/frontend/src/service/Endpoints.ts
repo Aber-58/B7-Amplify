@@ -4,5 +4,6 @@ export enum Endpoints {
     VALIDATE='validate',
     JOIN='join',
     POLL='poll',
-    TOPIC='topic'
+    TOPIC='topic',
+    LIVE='live'
 }
