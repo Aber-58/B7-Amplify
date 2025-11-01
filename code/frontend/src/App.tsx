@@ -7,16 +7,17 @@ import Join from "./routes/join/Join";
 import Live from "./routes/live/Live";
 import Login from "./routes/login/Login";
 import Poll from "./routes/poll/Poll";
+import {Navigation} from "./routes/Navigation";
 
 function App() {
     return <>
         <Routes>
-                <Route path="admin" element={<Admin />} />
-                <Route path="invite/:uuid" element={<Invite />} />
-                <Route path="join" element={<Join/>} />
-                <Route path="live" element={<Live />} />
-                <Route path="login" element={<Login />} />
-                <Route path="poll" element={<Poll />} />
+                <Route path={Navigation.ADMIN} element={<Admin />} />
+                <Route path={Navigation.INVITE} element={<Invite />} />
+                <Route path={Navigation.JOIN} element={<Join/>} />
+                <Route path={Navigation.LIVE} element={<Live />} />
+                <Route path={Navigation.LOGIN} element={<Login />} />
+                <Route path={Navigation.POLL} element={<Poll />} />
         </Routes>
     </>
 }
