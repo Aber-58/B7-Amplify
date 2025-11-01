@@ -85,6 +85,8 @@ def init(db_path=db_file):
     );
     """)
 
+    conn.commit()
+
     # ---------- ChatMessage ----------
     c.execute("""
     CREATE TABLE IF NOT EXISTS ChatMessage (
@@ -422,25 +424,3 @@ def get_chat_messages(limit: int = 100) -> list:
         "message": row[1],
         "timestamp": row[2]
     } for row in rows]
-
-
-def get_chat_messages_with_sentiment(limit: int = 100) -> list:
-    """
-    Get all chat messages with sentiment analysis applied.
-    Returns messages with added 'sentiment' field.
-    """
-    from sentiment_analyzer import SentimentAnalyzer
-    
-    # Get messages using existing function
-    messages = get_chat_messages(limit)
-    
-    # Apply sentiment analysis
-    analyzer = SentimentAnalyzer()
-    message_texts = [msg.get('message', '') for msg in messages]
-    sentiment_results = analyzer.analyze_batch(message_texts)
-    
-    # Combine results
-    for i, msg in enumerate(messages):
-        msg['sentiment'] = sentiment_results[i] if i < len(sentiment_results) else None
-    
-    return messages

@@ -5,6 +5,8 @@ import time
 import database as db
 import opinion_clustering
 
+from utils_llm import choose_proposed_solutions, ask_mistral
+
 routes = Blueprint('routes', __name__)
 
 def rate_limit(seconds):
@@ -208,5 +210,8 @@ def get_clusters(uuid_param):
         return {"error": "Topic not found"}, 404
     
     clusters = db.get_clustered_opinions_with_raw_opinions(uuid_param)
-    
-    return {"clusters": clusters}
+    cluster_data = {"clusters": clusters}
+    title, prompt = choose_proposed_solutions(cluster_data)
+    mistral_result = ask_mistral(prompt)
+
+    return {"title":title, "mistral_result":mistral_result}
