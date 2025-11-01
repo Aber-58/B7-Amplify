@@ -1,6 +1,9 @@
 // TODO: dont hardcode the API url :/
 import {Endpoints} from "./Endpoints";
-import {JoinResponse, LiveViewResponse, TopicResponse, AllTopicOpinions} from "./model/TopicResponse";
+import {TopicResponse} from "./model/TopicResponse";
+import {JoinResponse} from "./model/JoinResponse";
+import {LiveViewResponse} from "./model/LiveViewResponse";
+import {AllTopicOpinions} from "./model/AllTopicOpinions";
 
 const API_ENDPOINT = `http://localhost:4200/api`;
 const JSON_HEADER = {'Content-Type': 'application/json'};

@@ -1,6 +1,6 @@
-import {Solution} from "../../../service/model/TopicResponse";
 import './Opinion.css'
 import {CSSProperties} from "react";
+import {Solution} from "../../../service/model/Solution";
 
 interface OpinionProps {
     solution: Solution,

@@ -2,9 +2,9 @@ import Opinion from "./opinion/Opinion";
 import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router";
 import {getLiveView, handleError} from "../../service/fetchService";
-import {LiveViewResponse} from "../../service/model/TopicResponse";
 import './Live.css'
 import {Navigation} from "../Navigation";
+import {LiveViewResponse} from "../../service/model/LiveViewResponse";
 
 
 function Live() {

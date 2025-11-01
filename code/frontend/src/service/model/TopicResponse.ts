@@ -3,28 +3,3 @@ export interface TopicResponse {
     deadline: string,
 }
 
-enum TopicState {
-    QUESTION = 'question',
-    LOADING = 'loading',
-    LIVE = 'live',
-    RESULT = 'result',
-}
-
-export interface JoinResponse {
-    topic: string,
-    state: TopicState,
-    username: string,
-}
-
-export interface AllTopicOpinions {
-    opinions: {
-        [uuid: string]: {
-            content: string;
-            opinions: {
-                opinion: string;
-                weight: number;
-                username: string;
-            }[];
-        };
-    };
-}
