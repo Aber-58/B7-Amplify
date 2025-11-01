@@ -1,4 +1,5 @@
 import os
+FLASK_PORT = port = os.getenv("FLASK_PORT")
 from flask import Flask, send_from_directory
 from pages import routes
 from flask_cors import CORS
@@ -17,4 +18,4 @@ def serve(path):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=FLASK_PORT)

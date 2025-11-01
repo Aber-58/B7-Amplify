@@ -26,7 +26,7 @@ WORKDIR /app
 RUN mkdir -p /state
 
 # Expose Flask default port
-EXPOSE 5000
+EXPOSE 4200
 
 # Default command (interactive shell)
 CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]
