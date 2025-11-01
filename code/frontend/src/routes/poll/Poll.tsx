@@ -27,8 +27,8 @@ function Poll() {
         {pollSessionData ? (
             <>
                 <h2>"{pollSessionData.topic}"</h2>
-                <h2>{`${pollSessionData.username}`}</h2>
-                <h2>{`${pollSessionData.state}`}</h2>
+                <h2>{pollSessionData.username}</h2>
+                <h2>{pollSessionData.state}</h2>
             </>
         ) : <></>}
         <textarea value={opinion} onChange={e => setOpinion(e.target.value)} placeholder="Opinion"></textarea>
