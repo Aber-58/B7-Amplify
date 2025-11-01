@@ -7,8 +7,8 @@ function Admin() {
     const [topic, setTopic] = useState("")
     let navigation = useNavigate();
     function sendCreateTopic() {
-        createTopic(topic).then(uuid => {
-            navigation(`${Navigation.INVITE}/${uuid}`);
+        createTopic(topic).then(topic => {
+            navigation(`${Navigation.INVITE}/${topic.uuid}`);
         }).catch(error => handleError(error, () => navigation((Navigation.ERROR))))
     }
 

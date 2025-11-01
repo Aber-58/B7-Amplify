@@ -1,19 +1,22 @@
 // TODO: dont hardcode the API url :/
 import {Endpoints} from "./Endpoints";
+import {TopicResponse} from "./model/TopicResponse";
 
 const API_ENDPOINT = `http://localhost:4200/api`;
-
+const JSON_HEADER = { 'Content-Type': 'application/json' };
 
 export function loginUser(username: string): Promise<void> {
     return fetch(`${API_ENDPOINT}/${Endpoints.LOGIN}`, {
         method: 'POST',
+        headers: JSON_HEADER,
         body: JSON.stringify({username})
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
 
-export function createTopic(topic: string): Promise<string> {
+export function createTopic(topic: string): Promise<TopicResponse> {
     return fetch(`${API_ENDPOINT}/${Endpoints.ADMIN}`, {
         method: 'POST',
+        headers: JSON_HEADER,
         body: JSON.stringify({topic})
     }).then(res => {
         if (res.ok) {
