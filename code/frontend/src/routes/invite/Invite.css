@@ -1,0 +1,27 @@
+.invite-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+}
+
+.invite-container h1 {
+    color: #005b8f;
+}
+
+.qr-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.qr-wrapper svg {
+    width: 200px;
+    height: 200px;
+}
