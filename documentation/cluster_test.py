@@ -6,6 +6,20 @@ from sklearn.cluster import HDBSCAN, DBSCAN, KMeans, AgglomerativeClustering
 from sklearn.manifold import TSNE
 import numpy as np
 
+# bigger/different embedding model
+# - Qwen/Qwen3-Embedding-0.6B
+# - nvidia/llama-3.2-nv-embedqa-1b-v2
+# - Qwen/Qwen3-Embedding-4B
+# - tencent/Youtu-Embedding
+
+# filter non-constructive
+
+# generate headings
+
+# ranking for leader selection
+
+# integrate
+
 CORPORA_PROMPTS = {
     "what_blocks_you": "What is currently blocking you the most in your daily work?",
     "office_trash_solutions": "How should we solve the issue of trash piling up in the office?",
@@ -67,8 +81,13 @@ CORPORA = {
 }
 
 def hdbscan_clustering(embeddings):
+    clusterer = HDBSCAN(min_samples=2, min_cluster_size=3, max_cluster_size=5, cluster_selection_method="leaf",
+                       allow_single_cluster=False, metric="cosine")
+    return clusterer.fit_predict(embeddings)
+
+def hdbscan_clustering_manhattan(embeddings):
     clusterer = HDBSCAN(min_samples=2, min_cluster_size=2, cluster_selection_method="leaf",
-                       allow_single_cluster=True, metric="cosine")
+                       allow_single_cluster=True, metric="manhattan")
     return clusterer.fit_predict(embeddings)
 
 def dbscan_clustering(embeddings):
@@ -90,6 +109,7 @@ def tsne_hdbscan_clustering(embeddings):
 
 CLUSTERING_ALGORITHMS = {
     "hdbscan": hdbscan_clustering,
+    "hdbscan_clustering_manhattan": hdbscan_clustering_manhattan,
     "dbscan": dbscan_clustering,
     "kmeans": kmeans_clustering,
     "agglomerative": agglomerative_clustering,
@@ -101,7 +121,7 @@ def embed_stage(texts, model_name, pickle_dir, corpus_name):
     pickle_file = os.path.join(pickle_dir, f"{corpus_name}.pkl")
 
     print(f"Loading model: {model_name}")
-    model = SentenceTransformer(model_name)
+    model = SentenceTransformer(model_name, trust_remote_code=True)
 
     print(f"Encoding {len(texts)} texts...")
     embeddings = model.encode(texts)
