@@ -20,12 +20,14 @@ function Live() {
     const liveView: LiveViewResponse = {
         problemTitle: "Title",
         opinions: [
-            {opinion: "Make shit good", author: "the real one"},
-            {opinion: "Make shit bad", author: "the bad one"}
+            {opinion: "Make more", author: "the real one"},
+            {opinion: "Make mcool", author: "the fake one"},
+            {opinion: "cycling infrastructure", author: "the bad one"}
         ],
         solutions: [
-            {solutionTitle: "Make more efforts to get good", solutionWeight: 10},
-            {solutionTitle: "Make more efforts to make shit bad", solutionWeight: 5}
+            {solutionTitle: "Make more", solutionWeight: 40}, // In total, all 3 solutionWeights should add up 60
+            {solutionTitle: "Make less", solutionWeight: 11},
+            {solutionTitle: "cycling infrastructure", solutionWeight: 10}
         ],
         sortedMessages: [
             {text: "Blah Blah", author: "Real Person", timestamp: new Date()},
