@@ -112,8 +112,8 @@ def insert_user(username: str, session_id: str):
     
 def insert_topic(uuid: str, content: str, deadline: int):
     query_wrapper("""
-        INSERT OR REPLACE INTO Topics (uuid, content current_state, deadline)
-        VALUES (?, ?, ?);
+        INSERT OR REPLACE INTO Topics (uuid, content, current_state, deadline)
+        VALUES (?, ?, ?, ?);
     """, uuid, content, 0, deadline)
     # after initialization the state must be the init state 0
 
