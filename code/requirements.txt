@@ -12,3 +12,4 @@ transformers
 einops
 huggingface_hub
 sentence-transformers
+mistralai
