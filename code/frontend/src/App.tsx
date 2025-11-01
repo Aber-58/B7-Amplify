@@ -7,6 +7,7 @@ import Join from "./routes/join/Join";
 import Live from "./routes/live/Live";
 import Login from "./routes/login/Login";
 import Poll from "./routes/poll/Poll";
+import Error from "./routes/error/Error";
 
 function App() {
     return <>
@@ -17,6 +18,7 @@ function App() {
                 <Route path="live" element={<Live />} />
                 <Route path="login" element={<Login />} />
                 <Route path="poll" element={<Poll />} />
+                <Route path="error" element={<Error />} />
         </Routes>
     </>
 }

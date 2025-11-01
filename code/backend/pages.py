@@ -37,3 +37,7 @@ def poll(uuid_param):
 @routes.route('/live/<uuid_param>')
 def live(uuid_param):
     return "live room with cool clusters of opinions (and leader chat after clusters have been formed)"
+
+@routes.route('/error')
+def error():
+    return "displays an error message"
