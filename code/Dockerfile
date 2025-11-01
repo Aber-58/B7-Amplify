@@ -20,11 +20,13 @@ RUN pip install --no-cache-dir Flask
 RUN curl -fsSL curl -fsSL https://deno.land/install.sh | sh && \
     mv /root/.deno/bin/deno /usr/local/bin/deno
 
-# Set working directory
+# Repo
 WORKDIR /app
+# State
+RUN mkdir -p /state
 
 # Expose Flask default port
 EXPOSE 5000
 
 # Default command (interactive shell)
-CMD ["/bin/bash"]
+CMD ["/bin/bash", "--rcfile", "/app/code/env.source"]
