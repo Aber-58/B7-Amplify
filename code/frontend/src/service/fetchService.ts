@@ -8,5 +8,17 @@ export function loginUser(username: string): Promise<void> {
     return fetch(`${API_ENDPOINT}/${Endpoints.LOGIN}`, {
         method: 'POST',
         body: JSON.stringify({username})
-    }).then(res => res.ok ? Promise.resolve() : Promise.reject())
+    }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
+}
+
+export function createTopic(topic: string): Promise<string> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.ADMIN}`, {
+        method: 'POST',
+        body: JSON.stringify({topic})
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText)
+    })
 }
