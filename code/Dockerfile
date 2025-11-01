@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     unzip \
     git \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
@@ -22,13 +23,9 @@ WORKDIR /app
 COPY requirements.txt /app
 
 RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -e git+https://github.com/shoeffner/Flask-Websockets.git@master#egg=Flask-Websockets
 
-COPY frontend /app/frontend
-COPY backend /app/backend
-COPY env.source /app
-
-RUN npm --prefix /app/frontend install
-RUN npm --prefix /app/frontend run build
+# State
 RUN mkdir -p /state
 EXPOSE 4200
 
