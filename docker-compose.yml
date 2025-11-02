@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  amplify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amplify-app
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./state:/state
+      - ./code/backend:/app/backend:ro
+    environment:
+      - FLASK_PORT=4200
+      - STATE_DIR=/state
+      - DB_FILE=/state/db.sqlite
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  state:
+    driver: local
+

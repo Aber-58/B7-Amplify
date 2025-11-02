@@ -22,24 +22,30 @@ export const hueFromSentiment = (sentiment: number): number => {
  * +1 (positive) -> Green
  */
 export const clusterFill = (sentiment: number): string => {
-  // Map sentiment -1 to 1 to color: -1 (red) -> 0 (neutral gray) -> 1 (green)
+  // Wider color scale: 2x green, 1x red, 1x grey
+  // Map: -1 to -0.2 = red, -0.2 to 0.2 = gray, 0.2 to 1 = green
+  // This gives green 0.8 range, red 0.8 range, gray 0.4 range (2:2:1 ratio with bias toward green)
   const clamped = Math.max(-1, Math.min(1, sentiment));
   
-  if (clamped < 0) {
+  if (clamped < -0.2) {
     // Negative sentiment: red (0 hue)
+    // Map -1 to -0.2 onto 0-1 range
+    const normalized = (clamped + 0.2) / -0.8;
     const hue = 0; // Pure red
-    const saturation = 85 + Math.abs(clamped) * 10; // More saturated for stronger negative
-    const lightness = 60 - Math.abs(clamped) * 10; // Darker for stronger negative
+    const saturation = 80 + normalized * 15; // More saturated for stronger negative
+    const lightness = 55 - normalized * 15; // Darker for stronger negative
     return `hsl(${hue}, ${Math.min(100, saturation)}%, ${Math.max(40, lightness)}%)`;
-  } else if (clamped > 0) {
-    // Positive sentiment: green (120-140 hue)
-    const hue = 140; // Pure green
-    const saturation = 75 + clamped * 15; // More saturated for stronger positive
-    const lightness = 55 + clamped * 10; // Brighter for stronger positive
+  } else if (clamped > 0.2) {
+    // Positive sentiment: green (120-150 hue range)
+    // Map 0.2 to 1 onto 0-1 range
+    const normalized = (clamped - 0.2) / 0.8;
+    const hue = 120 + normalized * 30; // Green to bright green
+    const saturation = 70 + normalized * 20; // More saturated for stronger positive
+    const lightness = 50 + normalized * 15; // Brighter for stronger positive
     return `hsl(${hue}, ${Math.min(100, saturation)}%, ${Math.min(70, lightness)}%)`;
   } else {
-    // Neutral: gray
-    return `hsl(0, 0%, 60%)`;
+    // Neutral: gray (wider neutral range)
+    return `hsl(0, 0%, 65%)`;
   }
 };
 

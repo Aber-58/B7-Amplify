@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { pop, drawIn } from '../lib/motion';
+import { Tutorial } from './Tutorial';
 
 interface OpinionFormProps {
   onSubmit: (opinion: string, rating: number) => void;
@@ -19,6 +20,28 @@ export const OpinionForm: React.FC<OpinionFormProps> = ({
   const [rating, setRating] = useState(5);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Check if user has seen tutorial before (stored in localStorage)
+  useEffect(() => {
+    const seenTutorial = localStorage.getItem('amplifyTutorialSeen');
+    if (!seenTutorial) {
+      // Show tutorial after a short delay
+      const timer = setTimeout(() => {
+        setShowTutorial(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleTutorialComplete = () => {
+    setShowTutorial(false);
+    localStorage.setItem('amplifyTutorialSeen', 'true');
+  };
+
+  const handleShowTutorial = () => {
+    setShowTutorial(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +69,30 @@ export const OpinionForm: React.FC<OpinionFormProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto relative">
+      {/* Tutorial */}
+      {showTutorial && (
+        <Tutorial
+          onComplete={handleTutorialComplete}
+          onSkip={handleTutorialComplete}
+        />
+      )}
+
+      {/* Help button - top right icon */}
+      {!showTutorial && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={handleShowTutorial}
+          className="fixed top-6 right-6 w-12 h-12 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full text-purple-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center z-40 border-2 border-purple-200"
+          whileHover={{ scale: 1.1, rotate: 15 }}
+          whileTap={{ scale: 0.9 }}
+          title="How it works"
+        >
+          <span className="text-2xl">💡</span>
+        </motion.button>
+      )}
+
       {topicTitle && (
         <div className="text-center mb-8">
           <p className="text-lg text-ink/60 mb-2">You are participating in:</p>
@@ -61,6 +107,7 @@ export const OpinionForm: React.FC<OpinionFormProps> = ({
           </p>
         </div>
       )}
+
 
       <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm rounded-lg shadow-card p-6 border border-ink/10">
         <div className="space-y-6">

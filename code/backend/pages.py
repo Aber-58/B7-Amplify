@@ -110,6 +110,17 @@ def delete_topic_endpoint(uuid_param):
         return {"error": "Failed to delete topic"}, 500
 
 
+@routes.route('/admin/reset', methods=['DELETE'])
+def reset_everything_endpoint():
+    """Reset entire database - delete all topics, opinions, clusters, votes, messages"""
+    try:
+        db.reset_everything()
+        return {"message": "Everything has been reset successfully"}, 200
+    except Exception as e:
+        print(f"Error resetting database: {e}")
+        return {"error": "Failed to reset database"}, 500
+
+
 @routes.route('/admin/<uuid_param>/opinion', methods=['POST'])
 def add_manual_opinion(uuid_param):
     """Add a manual opinion for a topic (admin only, no session required)"""

@@ -460,18 +460,18 @@ function Admin() {
 
     function handleStartLiveRound(uuid: string) {
         if (backendAvailable) {
-            // Start 90-second live round
+            // Start 45-second live round
             setLiveRounds(prev => ({
                 ...prev,
-                [uuid]: { active: true, timeLeft: 90 }
+                [uuid]: { active: true, timeLeft: 45 }
             }));
             
-            setToastMessage('🎮 Live round started! Open for 90 seconds!');
+            setToastMessage('🎮 Live round started! Open for 45 seconds!');
             setToastType('success');
             setShowToast(true);
             
-            // Navigate to live view
-            navigation(`/live/${uuid}`);
+            // Navigate to live view with round parameter
+            navigation(`/live/${uuid}?round=active`);
         } else {
             setToastMessage('Demo Mode: Live round would start here');
             setToastType('info');
@@ -761,7 +761,7 @@ function Admin() {
                                                                         ? 'bg-orange-500 text-white hover:bg-orange-600'
                                                                         : 'bg-purple-500 text-white hover:bg-purple-600'
                                                                 } disabled:opacity-70 disabled:cursor-not-allowed`}
-                                                                title={liveRounds[uuid]?.active ? `Live round active: ${liveRounds[uuid].timeLeft}s left` : 'Start 90-second live round'}
+                                                                title={liveRounds[uuid]?.active ? `Live round active: ${liveRounds[uuid].timeLeft}s left` : 'Start 45-second live round'}
                                                             >
                                                                 {liveRounds[uuid]?.active ? (
                                                                     <>
