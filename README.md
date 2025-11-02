@@ -244,29 +244,3 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
 This project is licensed under the MIT License - see the [LICENSE](license.txt) file for details.
 
-## 🙏 Acknowledgments
-
-- **Sentence Transformers** for embedding models
-- **scikit-learn** for clustering algorithms
-- **Hugging Face** for pre-trained models
-- **Mistral AI** for solution generation
-- **Flask** and **React** communities
-
-## 📞 Support
-
-For issues, questions, or contributions, please open an issue on GitHub.
-
-## 🔮 Future Enhancements
-
-- [ ] PostgreSQL migration for production persistence
-- [ ] WebSocket support for real-time updates
-- [ ] Multi-language support
-- [ ] Advanced analytics dashboard
-- [ ] Export functionality (CSV, PDF)
-- [ ] Custom deadline configuration
-- [ ] Email notifications
-
----
-
-**Built with ❤️ for collaborative decision-making**
-
