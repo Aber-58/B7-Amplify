@@ -3,3 +3,4 @@
 .gitignore
 
 *temp.py
+*.tar

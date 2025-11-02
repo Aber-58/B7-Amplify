@@ -308,8 +308,8 @@ def chat_last(limit):
 
 @routes.route('/update_ball_sizes/<uuid_param>', methods=['POST'])
 def post_update_ball_sizes(uuid_param):
-    if len(new_chat_messages)<5:
-        return {"status": "less than 5 msgs, not doing anything"}, 200
+    if len(new_chat_messages)<2:
+        return {"status": "less than 2 msgs, not doing anything"}, 200
     try:
         update_ball_sizes(uuid_param)  # Call your function
         return {"status": "success"}, 200
