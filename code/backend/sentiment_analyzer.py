@@ -5,24 +5,25 @@ from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
-# Configuration constants
-# For 5-class model, only filter extremely low confidence (< 0.3)
-# Random chance is 20%, so 0.3 is very low
-MIN_CONFIDENCE_THRESHOLD = 0.3  # Only for extreme uncertainty
+# Configuration constants for binary sentiment analysis
+# Using stricter thresholds to better distinguish good vs bad
+MIN_CONFIDENCE_THRESHOLD = 0.55  # Minimum confidence for classification
+HIGH_CONFIDENCE_THRESHOLD = 0.85  # Threshold for high confidence
 MIN_TEXT_LENGTH = 3
 MAX_TEXT_LENGTH = 5000
 
 
 class SentimentAnalyzer:
     """
-    Professional sentiment analysis using Hugging Face model.
+    Professional binary sentiment analysis using Hugging Face model.
     Features:
     - Enhanced preprocessing (text cleaning, normalization)
-    - Confidence threshold validation
+    - Binary classification (positive/negative only, no neutral)
+    - Strict confidence thresholds for better distinction
     - Input validation
     - Batch processing support
     - Improved error handling
-    - Automatic neutral detection for low-confidence predictions
+    - Clear distinction between good and bad sentiments
     """
     
     _instance = None
@@ -40,10 +41,12 @@ class SentimentAnalyzer:
             self._load_model()
     
     def _load_model(self):
-        """Load the sentiment analysis model from Hugging Face"""
+        """Load the binary sentiment analysis model from Hugging Face"""
         try:
-            model_name = "tabularisai/multilingual-sentiment-analysis"
-            logger.info("Loading sentiment analysis model: %s", model_name)
+            # Using DistilBERT model fine-tuned for binary sentiment
+            # This model is excellent at distinguishing between good and bad
+            model_name = "distilbert-base-uncased-finetuned-sst-2-english"
+            logger.info("Loading binary sentiment analysis model: %s", model_name)
             self._analyzer = pipeline(
                 'sentiment-analysis',
                 model=model_name,
@@ -52,7 +55,7 @@ class SentimentAnalyzer:
                 # Only return top prediction
                 return_all_scores=False
             )
-            logger.info("Model loaded successfully")
+            logger.info("Binary sentiment model loaded successfully")
         except Exception as e:
             logger.error(
                 "Error loading sentiment analysis model: %s",
@@ -117,62 +120,69 @@ class SentimentAnalyzer:
         """
         Process raw model output and apply validation rules.
 
-        This model is a 5-class classifier (Very Negative, Negative,
-        Neutral, Positive, Very Positive). We map to 3 classes and
-        trust the model's prediction unless confidence is extremely low.
+        This model is a binary classifier (POSITIVE/NEGATIVE only).
+        We force all results to be either positive or negative - no neutral.
+        Uses strict confidence thresholds to better distinguish good vs bad.
 
         Args:
             result: Raw model output
             original_text: Original input text for context (unused)
 
         Returns:
-            Processed sentiment result
+            Processed sentiment result (POSITIVE or NEGATIVE only)
         """
         _ = original_text  # Acknowledge parameter even if unused
         label = result.get('label', '').upper()
         score = float(result.get('score', 0.5))
         
-        # Map 5-class model labels to our 3-class system
-        # Model returns: Very Negative, Negative, Neutral,
-        # Positive, Very Positive
+        # Map various label formats to binary labels
+        # Model returns: POSITIVE or NEGATIVE (binary)
         label_mapping = {
-            'VERY NEGATIVE': 'NEGATIVE',
-            'VERY_NEGATIVE': 'NEGATIVE',
-            'NEGATIVE': 'NEGATIVE',
-            'NEG': 'NEGATIVE',
-            'NEUTRAL': 'NEUTRAL',
-            'NEU': 'NEUTRAL',
             'POSITIVE': 'POSITIVE',
             'POS': 'POSITIVE',
-            'VERY POSITIVE': 'POSITIVE',
-            'VERY_POSITIVE': 'POSITIVE'
+            'POSITIV': 'POSITIVE',
+            'NEGATIVE': 'NEGATIVE',
+            'NEG': 'NEGATIVE',
+            'NEGATIV': 'NEGATIVE',
+            'LABEL_0': 'NEGATIVE',  # Some models use numeric labels
+            'LABEL_1': 'POSITIVE',
+            'NEUTRAL': None,  # Will be forced to binary based on score
         }
         
-        # Get normalized label (map 5-class to 3-class)
-        normalized_label = label_mapping.get(label, label)
+        # Normalize the label
+        normalized_label = label_mapping.get(label)
         
-        # For multi-class model (5 classes), random chance is 20%
-        # Only filter if confidence is extremely low (< 0.3)
-        # A score of 0.54 for NEGATIVE in 5-class is actually good confidence
+        # If label mapping didn't work, force binary classification from score
+        # This shouldn't happen with SST-2 model, but kept as fallback
+        if normalized_label is None:
+            # Force binary classification based on score
+            # With binary models, score > 0.5 typically means positive
+            if score > 0.5:
+                normalized_label = 'POSITIVE'
+            else:
+                normalized_label = 'NEGATIVE'
+                # Score represents confidence in positive, so for negative:
+                score = 1.0 - score
+        
+        # Note: Binary models return the score for the predicted label
+        # If model returns "NEGATIVE" with score 0.9, that means 90% confidence
+        # We keep the score as-is since it represents confidence in the label
+        
+        # Apply confidence thresholds
         if score < MIN_CONFIDENCE_THRESHOLD:
-            # Extremely low confidence - might be uncertain
+            # Low confidence - still classify but mark as low confidence
+            # We force binary, so we'll use the label but with lower confidence
             confidence_level = 'low'
-            # Only mark as neutral if we can't determine sentiment from label
-            if normalized_label not in ['POSITIVE', 'NEGATIVE', 'NEUTRAL']:
-                normalized_label = 'NEUTRAL'
-                score = 0.5
-        elif score >= 0.7:
+        elif score >= HIGH_CONFIDENCE_THRESHOLD:
             confidence_level = 'high'
         else:
             confidence_level = 'medium'
         
-        # Determine sentiment from normalized label
-        if normalized_label in ['POSITIVE']:
+        # Force binary - always positive or negative, never neutral
+        if normalized_label == 'POSITIVE':
             sentiment = 'positive'
-        elif normalized_label in ['NEGATIVE']:
-            sentiment = 'negative'
         else:
-            sentiment = 'neutral'
+            sentiment = 'negative'
         
         return {
             'label': normalized_label,
@@ -180,7 +190,7 @@ class SentimentAnalyzer:
             'sentiment': sentiment,
             'confidence': confidence_level,
             'original_label': label,  # Keep original for debugging
-            'original_score': score
+            'original_score': result.get('score', 0.5)
         }
     
     def _get_error_result(self, error: Exception, text: str) -> dict:
@@ -218,10 +228,10 @@ class SentimentAnalyzer:
             
         Returns:
             dict: Contains sentiment analysis results with:
-                - label: The sentiment label (POSITIVE, NEGATIVE, NEUTRAL, ERROR)
+                - label: The sentiment label (POSITIVE or NEGATIVE only)
                 - score: The confidence score (0.0 to 1.0)
                 - sentiment: Normalized sentiment label in lowercase
-                - confidence: Confidence level (high/low/none)
+                - confidence: Confidence level (high/medium/low)
                 - Additional metadata for low-confidence or error cases
         """
         # Input validation
@@ -241,11 +251,12 @@ class SentimentAnalyzer:
         
         # Check if preprocessing resulted in empty text
         if not processed_text or not processed_text.strip():
+            # Force binary - default to negative for empty/invalid text
             return {
-                'label': 'NEUTRAL',
+                'label': 'NEGATIVE',
                 'score': 0.5,
-                'sentiment': 'neutral',
-                'confidence': 'none',
+                'sentiment': 'negative',
+                'confidence': 'low',
                 'note': 'Text contained only URLs, emails, or whitespace'
             }
         
@@ -345,19 +356,16 @@ class SentimentAnalyzer:
                 'total': 0,
                 'positive': 0,
                 'negative': 0,
-                'neutral': 0,
                 'errors': 0,
                 'positive_percent': 0.0,
                 'negative_percent': 0.0,
-                'neutral_percent': 0.0,
-                'bias': 0.0  # Positive = 1.0, Neutral = 0.0, Negative = -1.0
+                'bias': 0.0  # Positive = 1.0, Negative = -1.0
             }
         
         stats = {
             'total': len(results),
             'positive': 0,
             'negative': 0,
-            'neutral': 0,
             'errors': 0,
             'total_score': 0.0
         }
@@ -368,18 +376,18 @@ class SentimentAnalyzer:
                 stats['positive'] += 1
             elif sentiment == 'negative':
                 stats['negative'] += 1
-            elif sentiment == 'neutral':
-                stats['neutral'] += 1
             else:
                 stats['errors'] += 1
             
             # Accumulate scores (excluding errors and low confidence)
             if result.get('confidence') == 'high':
                 score = result.get('score', 0.5)
-                label = result.get('label', 'NEUTRAL')
+                label = result.get('label', 'NEGATIVE')
                 if label == 'POSITIVE':
                     stats['total_score'] += score
                 elif label == 'NEGATIVE':
+                    # For negative, score represents confidence in negative
+                    # To calculate bias, we subtract from 0.5 (neutral point)
                     stats['total_score'] += (1 - score)
                 else:
                     stats['total_score'] += 0.5
@@ -389,17 +397,15 @@ class SentimentAnalyzer:
         if valid_count > 0:
             stats['positive_percent'] = (stats['positive'] / valid_count) * 100
             stats['negative_percent'] = (stats['negative'] / valid_count) * 100
-            stats['neutral_percent'] = (stats['neutral'] / valid_count) * 100
             
             # Calculate bias: (positive - negative) / total
-            # Normalized to -1 to 1
+            # Normalized to -1 to 1 (negative) to 1 (positive)
             stats['bias'] = (
                 (stats['positive'] - stats['negative']) / valid_count
             )
         else:
             stats['positive_percent'] = 0.0
             stats['negative_percent'] = 0.0
-            stats['neutral_percent'] = 0.0
             stats['bias'] = 0.0
         
         return stats
