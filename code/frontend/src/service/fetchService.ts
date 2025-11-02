@@ -4,6 +4,10 @@ import {TopicResponse} from "./model/TopicResponse";
 import {JoinResponse} from "./model/JoinResponse";
 import {LiveViewResponse} from "./model/LiveViewResponse";
 import {AllTopicOpinions} from "./model/AllTopicOpinions";
+import {Solution} from "./model/Solution";
+import {Opinion} from "./model/Opinion";
+import {Dictionary} from "./model/Dictionary";
+import {LiveClusterResponse} from "./LiveClusterResponse";
 
 const API_ENDPOINT = `http://localhost:4200/api`;
 const JSON_HEADER = {'Content-Type': 'application/json'};
@@ -83,17 +87,39 @@ export function getTopicInfo(uuid: string): Promise<{ topic: string, state: stri
     })
 }
 
-export function getLiveView(uuid: string): Promise<LiveViewResponse> {
-    return fetch(`${API_ENDPOINT}/${Endpoints.LIVE}/${uuid}`, {
+export function getClusterCircleSize(uuid: string): Promise<Dictionary<number>> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.GET_CIRCLE_SIZES}/${uuid}`, {
         method: 'GET',
         headers: JSON_HEADER,
-        credentials: 'same-origin',
-    }).then(res => {
+    }).then(async res => {
         if (res.ok) {
             return res.json();
         }
         return Promise.reject(res.statusText)
     })
+}
+
+export async function getLiveClusters(uuid: string): Promise<LiveViewResponse> {
+    const clusterData: LiveClusterResponse = await fetch(`${API_ENDPOINT}/${Endpoints.CLUSTERS}/${uuid}`, {
+        method: 'GET',
+        headers: JSON_HEADER,
+    }).then(res => res.json());
+    const clusterSizeData = new Map<string, number>(Object.entries(await getClusterCircleSize(uuid)));
+
+    const solutions: Solution[] = Object.entries(clusterData.mistral_result).map(([key, value]) => {
+        return ({solutionTitle: key, solutionWeight: clusterSizeData.get(key) ?? 0});
+    })
+
+    const opinions: Opinion[] = Object.values(clusterData.mistral_result).map(opinion => ({opinion, author: "-"}))
+
+    const view: LiveViewResponse = ({
+        problemTitle: clusterData.title,
+        opinions: opinions,
+        solutions: solutions,
+        sortedMessages: []
+    })
+
+    return view;
 }
 
 export function getClusters(uuid: string) {
@@ -113,7 +139,7 @@ export function handleError(errorText: string, callback: () => void) {
     callback()
 }
 
-export function triggerCluster(uuid: string): Promise<{status: string, cooldown: number}> {
+export function triggerCluster(uuid: string): Promise<{ status: string, cooldown: number }> {
     return fetch(`${API_ENDPOINT}/${Endpoints.CLUSTER}/${uuid}`, {
         method: 'POST',
         headers: JSON_HEADER,
