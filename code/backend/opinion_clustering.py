@@ -133,10 +133,11 @@ _worker_pool = None
 _task_queue = None
 
 # Configuration
-MODEL_NAME = 'all-MiniLM-L6-v2'  # Fast, efficient, good for short texts
+MODEL_NAME = 'tencent/Youtu-Embedding'  # Better semantic understanding for clustering
 MODEL_CACHE_FOLDER = '/state'
 MIN_CLUSTER_SIZE_RATIO = 0.05  # Minimum 5% of data points per cluster
 MIN_SAMPLES_RATIO = 0.02  # Minimum 2% for core points
+USE_CLUSTERING_PREFIX = True  # Use "clustering: " prefix for better embeddings
 
 
 def init():
@@ -157,6 +158,7 @@ def get_model():
     """
     Get or create the embedding model (singleton pattern).
     Model is cached globally for efficiency.
+    Uses tencent/Youtu-Embedding for better semantic clustering.
     """
     global _model_cache
     if _model_cache is None:
@@ -164,11 +166,28 @@ def get_model():
             # Double-check pattern in case another process created it
             if _model_cache is None:
                 print(f"Loading embedding model: {MODEL_NAME}")
-                _model_cache = SentenceTransformer(
-                    MODEL_NAME,
-                    cache_folder=MODEL_CACHE_FOLDER
-                )
-                print("Model loaded successfully")
+                try:
+                    # Try to load Youtu-Embedding with trust_remote_code for better semantic understanding
+                    _model_cache = SentenceTransformer(
+                        MODEL_NAME,
+                        trust_remote_code=True,
+                        cache_folder=MODEL_CACHE_FOLDER if MODEL_CACHE_FOLDER else None
+                    )
+                    print("Model loaded successfully")
+                except Exception as e:
+                    print(f"Error loading {MODEL_NAME}, falling back to all-MiniLM-L6-v2: {e}")
+                    # Fallback to default model if Youtu-Embedding fails
+                    try:
+                        _model_cache = SentenceTransformer(
+                            'all-MiniLM-L6-v2',
+                            cache_folder=MODEL_CACHE_FOLDER if MODEL_CACHE_FOLDER else None
+                        )
+                        print("Fallback model loaded successfully")
+                    except Exception as e2:
+                        print(f"Error loading fallback model: {e2}")
+                        # Last resort: use default cache location
+                        _model_cache = SentenceTransformer('all-MiniLM-L6-v2')
+                        print("Default model loaded successfully (using default cache)")
     return _model_cache
 
 
@@ -562,10 +581,16 @@ def cluster_raw_opinions(raw_opinions: List[Dict]) -> List[List[Dict]]:
     # Get cached model
     model = get_model()
     
-    # Generate embeddings efficiently
+    # Generate embeddings efficiently with clustering prefix for better semantic understanding
     print(f"Generating embeddings for {len(texts)} opinions...")
+    if USE_CLUSTERING_PREFIX:
+        # Use prefix to help model understand this is for clustering task
+        prefixed_texts = [f"clustering: {text}" for text in texts]
+    else:
+        prefixed_texts = texts
+    
     embeddings = model.encode(
-        texts,
+        prefixed_texts,
         batch_size=32,  # Process in batches for efficiency
         show_progress_bar=False,
         convert_to_numpy=True
@@ -603,9 +628,11 @@ def cluster_raw_opinions(raw_opinions: List[Dict]) -> List[List[Dict]]:
             current_min_cluster_size = 2
             allow_single = True
         
+        # Use more strict parameters for better separation of unrelated items
+        # Higher min_cluster_size and min_samples help prevent unrelated clustering
         clusterer = HDBSCAN(
-            min_samples=current_min_samples,
-            min_cluster_size=current_min_cluster_size,
+            min_samples=max(2, current_min_samples),  # At least 2 samples required
+            min_cluster_size=max(2, current_min_cluster_size),  # At least 2 items per cluster
             cluster_selection_method="leaf",  # Leaf method works better for semantic clustering
             cluster_selection_epsilon=0.0,  # Don't use epsilon cutoff
             metric="cosine",  # Cosine works best with normalized embeddings
@@ -678,7 +705,8 @@ def cluster_raw_opinions(raw_opinions: List[Dict]) -> List[List[Dict]]:
                     
                     for cluster_label, centroid, _ in existing_cluster_centroids:
                         similarity = np.dot(noise_embedding, centroid)
-                        if similarity > 0.7 and similarity > best_similarity:  # Threshold for assignment
+                        # Higher threshold (0.75) to prevent unrelated items from being grouped
+                        if similarity > 0.75 and similarity > best_similarity:
                             best_similarity = similarity
                             best_cluster_label = cluster_label
                     
@@ -732,12 +760,13 @@ def cluster_raw_opinions(raw_opinions: List[Dict]) -> List[List[Dict]]:
     
     print(f"Created {len(initial_clusters)} initial clusters before post-processing")
     
-    # Post-processing: Merge very similar clusters
+    # Post-processing: Merge very similar clusters (higher threshold to avoid over-merging)
     print("Post-processing: Merging similar clusters...")
-    merged_clusters = merge_similar_clusters(initial_clusters, embeddings, similarity_threshold=0.82)
+    # Increased threshold to 0.85 to ensure only truly similar clusters merge
+    merged_clusters = merge_similar_clusters(initial_clusters, embeddings, similarity_threshold=0.85)
     print(f"After merging: {len(merged_clusters)} clusters")
     
-    # Post-processing: Split clusters with low internal similarity
+    # Post-processing: Split clusters with low internal similarity (stricter threshold)
     print("Post-processing: Splitting dissimilar clusters...")
     final_clusters = []
     
@@ -752,7 +781,9 @@ def cluster_raw_opinions(raw_opinions: List[Dict]) -> List[List[Dict]]:
                     break
         
         if len(cluster_indices) == len(cluster):
-            split_clusters = split_dissimilar_cluster(cluster, embeddings, cluster_indices, min_similarity=0.65)
+            # Increased min_similarity to 0.70 to split clusters with lower cohesion
+            # This prevents unrelated items from staying together
+            split_clusters = split_dissimilar_cluster(cluster, embeddings, cluster_indices, min_similarity=0.70)
             final_clusters.extend(split_clusters)
         else:
             # Can't match, keep as-is
@@ -793,14 +824,13 @@ def cluster_raw_opinions(raw_opinions: List[Dict]) -> List[List[Dict]]:
 
 def pick_winners(clusters: List[List[Dict]]) -> List[Dict]:
     """
-    Select cluster leaders (winners) from clusters.
+    Select cluster leaders (winners) from clusters using exponential weight-based selection.
     
-    Improved version: Leaders are already selected in cluster_raw_opinions
-    using a combination of weight and centrality.
+    Uses probabilistic selection based on exponential weights, favoring higher-weighted
+    opinions while still allowing diversity through randomness.
     
     Args:
         clusters: List of clusters, where each cluster is a list of opinions
-                 with the leader already in the first position
     
     Returns:
         List of winner dictionaries with keys:
@@ -811,12 +841,27 @@ def pick_winners(clusters: List[List[Dict]]) -> List[Dict]:
     winners = []
     for cluster in clusters:
         if cluster:
-            # Leader is already the first opinion in each cluster
-            leader = cluster[0]
+            if len(cluster) == 1:
+                # Single opinion cluster
+                leader = cluster[0]
+            else:
+                # Use exponential weights for probabilistic selection
+                # This gives higher weight to opinions with higher ratings
+                # while still allowing some randomness for diversity
+                weights = np.array([opinion.get('weight', 5) for opinion in cluster])
+                
+                # Use exponential to amplify weight differences
+                exp_weights = np.exp(weights)
+                probabilities = exp_weights / np.sum(exp_weights)
+                
+                # Random selection based on probabilities
+                winner_idx = np.random.choice(len(cluster), p=probabilities)
+                leader = cluster[winner_idx]
+            
             winners.append({
                 'cluster': cluster,
                 'winner': leader,
-                'username': leader['username']
+                'username': leader.get('username', 'unknown')
             })
     return winners
 
