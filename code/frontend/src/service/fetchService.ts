@@ -109,7 +109,7 @@ export async function getLiveClusters(uuid: string): Promise<LiveViewResponse> {
     }).then(res => res.json());
     const messages = await getLastMessages()
     const clusterSizeData = new Map<string, number>(Object.entries(await getClusterCircleSize(uuid)));
-
+const topic = await getTopicInfo(uuid);
     const solutions: Solution[] = Object.entries(clusterData.mistral_result).map(([key, value]) => {
         return ({solutionTitle: key, solutionWeight: clusterSizeData.get(key) ?? 0});
     })
@@ -118,7 +118,7 @@ export async function getLiveClusters(uuid: string): Promise<LiveViewResponse> {
     const opinions: Opinion[] = Object.values(clusterData.mistral_result).map(opinion => ({opinion, author: "-"}))
 
     const view: LiveViewResponse = ({
-        problemTitle: clusterData.title,
+        problemTitle: topic.topic,
         opinions: opinions,
         solutions: solutions,
         sortedMessages
