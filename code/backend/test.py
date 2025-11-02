@@ -1,17 +1,14 @@
-import sqlite3
-import os
-import database as db
+from sentiment_analyzer import SentimentAnalyzer
 
-# db.insert_raw_opinion("nilser", "d76e296e-3c2b-4e77-9812-31ac8812eddc", "alles :((", 5)
 
-db_file = os.getenv("DB_FILE")
+analyzer = SentimentAnalyzer()
+message_texts = ['i hate LV1', "i love LV2"]
+sentiment_results = analyzer.analyze_batch(message_texts)
 
-conn = sqlite3.connect(db_file)
-c = conn.cursor()
-c.execute("PRAGMA foreign_keys = ON;")
+# Combine results
+# for i, msg in enumerate(messages):
+#     msg['sentiment'] = sentiment_results[i] if i < len(sentiment_results) else None
 
-c.execute("""
-        SELECT * from RawOpinion;
-    """)
 
-print(c.fetchall())
+print(message_texts)
+print(sentiment_results)
