@@ -28,6 +28,38 @@ def categorize_sentences(LV, sentences, threshold=0.1):
     return out
 
 
+import utils_chat as uc
+from sentiment_analyzer import SentimentAnalyzer
+import warnings
+warnings.filterwarnings("ignore", message="`return_all_scores` is now deprecated")
+
+
+_analyzer = None
+
+def get_chat_LV_popularity(LVs, texts):
+    """Analyze sentiment popularity per LV (lazy-loads analyzer)."""
+    global _analyzer
+
+    if _analyzer is None:
+        _analyzer = SentimentAnalyzer()
+
+    sentiment_results = _analyzer.analyze_batch(texts)
+    sentiment_results = [result['sentiment'] for result in sentiment_results]
+
+    category_results = uc.categorize_sentences(LV=LVs, sentences=texts)
+
+    score_map = {'positive': 1, 'negative': -1, 'neutral': 0}
+
+    result = {}
+    for text, sentiment in zip(texts, sentiment_results):
+        lv = category_results.get(text)
+        if not lv or lv == "Uncategorized":
+            continue  # Skip uncategorized
+        score = score_map.get(sentiment, 0)
+        result[lv] = result.get(lv, 0) + score
+
+    return result
+
 if __name__ == "__main__": # feel free to test, it lazy loads the model so first call is slow
     LV = ['Update server', 'Buy server', 'Cloud Solution']
     sentences = [
@@ -40,3 +72,5 @@ if __name__ == "__main__": # feel free to test, it lazy loads the model so first
     ]
 
     print(categorize_sentences(LV, sentences))
+
+

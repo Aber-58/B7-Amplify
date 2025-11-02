@@ -1,17 +1,18 @@
-import sqlite3
-import os
-import database as db
+from utils_llm import choose_proposed_solutions, ask_mistral
+from utils_chat import get_chat_LV_popularity
 
-# db.insert_raw_opinion("nilser", "d76e296e-3c2b-4e77-9812-31ac8812eddc", "alles :((", 5)
+cluster_circle_sizes = {'LV1':16, "LV2": 16, "LV3":16}
 
-db_file = os.getenv("DB_FILE")
+LVs = list(cluster_circle_sizes.keys())
+texts = ['LV1 Love', 'LV2 sucks']
 
-conn = sqlite3.connect(db_file)
-c = conn.cursor()
-c.execute("PRAGMA foreign_keys = ON;")
+adjustments = get_chat_LV_popularity(LVs, texts)  # e.g. {'LV1':1, 'LV2':-1, 'LV3':0}
 
-c.execute("""
-        SELECT * from RawOpinion;
-    """)
+cluster_circle_sizes = cluster_circle_sizes.copy()
+adjusted = {k: cluster_circle_sizes.get(k, 0) + adjustments.get(k, 0) for k in cluster_circle_sizes}
 
-print(c.fetchall())
+# Normalize so the total sums to 50
+total = sum(adjusted.values())
+cluster_circle_sizes = {k: v * 50 / total for k, v in adjusted.items()}
+
+print(cluster_circle_sizes)
