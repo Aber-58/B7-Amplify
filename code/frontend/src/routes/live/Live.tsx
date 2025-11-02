@@ -13,21 +13,6 @@ import { getWebSocketService } from "../../lib/ws";
 import { calculateClusterSentiment, calculateTextSentiment } from "../../lib/sentiment";
 import type { Cluster } from "../../store/clusterStore";
 
-// Fun encouraging messages
-const ENCOURAGING_MESSAGES = [
-  "🎉 Amazing! Your ideas are clustering!",
-  "✨ Magic is happening!",
-  "🚀 Clusters forming! Keep it going!",
-  "💫 Brilliant minds think together!",
-  "🎯 Patterns emerging!",
-  "🌟 Collective intelligence in action!",
-  "🔥 Things are heating up!",
-  "💡 Ideas connecting like neurons!",
-  "🎨 Beautiful patterns forming!",
-  "⚡ Energy building up!",
-];
-
-
 function Live() {
   const { uuid } = useParams();
   const navigate = useNavigate();

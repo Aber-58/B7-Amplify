@@ -51,9 +51,10 @@ Format your response as a clear, concise explanation. No JSON, just plain text."
             clustering_reason = clustering_reason.get('explanation', str(clustering_reason))
         elif not isinstance(clustering_reason, str):
             clustering_reason = str(clustering_reason)
-    except Exception as e:
-        print(f"Error generating clustering reason: {e}")
-        clustering_reason = "These opinions share common themes and semantic similarity, which is why they were grouped together in this cluster."
+    except (ValueError, Exception) as e:
+        # If API key is missing or other error, fall back to simple reasoning
+        print(f"Error generating clustering reason (falling back to simple reasoning): {e}")
+        return generate_simple_reasoning(cluster_opinions, heading, leader_opinion)
     
     # Generate heading rationale
     heading_prompt = f"""Explain why this opinion was selected as the cluster heading:
@@ -78,8 +79,9 @@ Format your response as a clear, concise explanation. No JSON, just plain text."
             heading_rationale = heading_rationale.get('explanation', str(heading_rationale))
         elif not isinstance(heading_rationale, str):
             heading_rationale = str(heading_rationale)
-    except Exception as e:
-        print(f"Error generating heading rationale: {e}")
+    except (ValueError, Exception) as e:
+        # If API key is missing or other error, use simple rationale
+        print(f"Error generating heading rationale (using fallback): {e}")
         heading_rationale = f'The heading "{heading}" was selected because it best represents the common themes and ideas shared across all opinions in this cluster.'
     
     return {

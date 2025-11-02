@@ -1,5 +1,6 @@
 import sqlite3
 import os
+from typing import Optional
 
 db_file = os.getenv("DB_FILE")
 
@@ -295,7 +296,7 @@ def get_raw_opinions_for_topic(topic_uuid: str) -> list:
 
     return [{"raw_id": row[0], "username": row[1], "opinion": row[2], "weight": row[3]} for row in rows]
 
-def get_username_by_session_id(session_id: str) -> str|None:
+def get_username_by_session_id(session_id: str) -> Optional[str]:
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")
@@ -311,7 +312,7 @@ def get_username_by_session_id(session_id: str) -> str|None:
     return row[0] if row else None
 
 
-def get_content_by_uuid(uuid: int) -> tuple|None: # (content, state, deadline)
+def get_content_by_uuid(uuid: int) -> Optional[tuple]: # (content, state, deadline)
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
     c.execute("PRAGMA foreign_keys = ON;")

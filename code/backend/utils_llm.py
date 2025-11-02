@@ -1,15 +1,31 @@
-from mistralai import Mistral
 import os
 import json
 
-_API_KEY = os.getenv("MISTRAL_API_KEY", "")
-if not _API_KEY:
-    raise ValueError("Missing MISTRAL_API_KEY environment variable. Check whatsapp, didnt push it since env is public" )
+# Try to import Mistral - handle gracefully if not installed
+try:
+    from mistralai import Mistral
+    _MISTRAL_AVAILABLE = True
+except ImportError:
+    _MISTRAL_AVAILABLE = False
+    Mistral = None
 
-_mistral = Mistral(api_key=_API_KEY)
+_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+_mistral = None
+
+def _get_mistral_client():
+    """Lazy initialization of Mistral client - only when actually needed."""
+    global _mistral
+    if not _MISTRAL_AVAILABLE:
+        raise ValueError("Mistral AI library is not installed. Install it with: pip install mistralai")
+    if _mistral is None:
+        if not _API_KEY:
+            raise ValueError("Missing MISTRAL_API_KEY environment variable. Set it to use LLM features.")
+        _mistral = Mistral(api_key=_API_KEY)
+    return _mistral
 
 def ask_mistral(prompt, model="mistral-small-latest"):
-    res = _mistral.chat.complete(
+    mistral = _get_mistral_client()
+    res = mistral.chat.complete(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         stream=False
