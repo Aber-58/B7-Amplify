@@ -11,20 +11,29 @@ function Invite() {
 
     useEffect(() => {
         if (uuid) {
-            getTopicInfo(uuid).then(setTopicData).catch(console.error);
+            getTopicInfo(uuid)
+                .then(setTopicData)
+                .catch(err => {
+                    console.log('Backend not available, using demo mode:', err);
+                    // Use mock topic data for demo
+                    setTopicData({
+                        topic: 'Demo Topic - How can we improve team collaboration?',
+                        state: 'question'
+                    });
+                });
         }
     }, [uuid]);
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-paper flex flex-col items-center justify-center p-4">
             <div className="text-center max-w-md w-full">
                 <div className="mb-8">
-                    <p className="text-lg text-gray-500 mb-2">You are invited to the discussion:</p>
-                    <h1 className="text-3xl font-bold text-primary">
+                    <p className="text-lg text-ink/60 mb-2 font-display">You are invited to the discussion:</p>
+                    <h1 className="text-3xl font-display font-bold text-ink">
                         {topicData?.topic || "Loading..."}
                     </h1>
                 </div>
-                <div className="bg-white p-8 rounded-lg shadow-sm mb-6">
+                <div className="bg-white p-8 rounded-lg shadow-card mb-6 border border-ink/10">
                     <Link to={`/join/${uuid}`} className="block">
                         <QRCode 
                             value={inviteUrl} 
@@ -32,7 +41,7 @@ function Invite() {
                         />
                     </Link>
                 </div>
-                <p className="text-gray-600 text-sm">
+                <p className="text-ink/60 text-sm font-display">
                     Scan the QR code or click it to join the poll
                 </p>
             </div>

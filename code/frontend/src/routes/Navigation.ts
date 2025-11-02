@@ -6,4 +6,5 @@ export enum Navigation {
     LOGIN = '/login',
     POLL = '/poll',
     ERROR = '/error',
+    DEV = '/dev',
 }

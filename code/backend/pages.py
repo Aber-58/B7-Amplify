@@ -1,11 +1,10 @@
 from flask import Blueprint, request, make_response
 import uuid
 import time
+import datetime
 
 import database as db
 import opinion_clustering
-
-from utils_llm import choose_proposed_solutions, ask_mistral
 
 routes = Blueprint('routes', __name__)
 
@@ -57,20 +56,95 @@ def admin():
 def admin_get_opinion():
     raw_opinions = db.get_raw_opinions()
 
-    opinion_dict = {}
+    # First, get all topics (even without opinions)
+    all_topics = db.get_all_topics()
 
-    for (uuid, content, opinion, username, weight) in raw_opinions:
-        if uuid not in opinion_dict:
-            opinion_dict[uuid] = {
-                "content": content,
-                "opinions": [(opinion, weight, username)]
-            }
+    # Initialize opinion_dict with all topics
+    opinion_dict = {}
+    for topic_tuple in all_topics:
+        topic_uuid = topic_tuple[0]
+        topic_content = topic_tuple[1]
+        opinion_dict[topic_uuid] = {
+            "content": topic_content,
+            "opinions": []
+        }
+
+    # Then add opinions to their respective topics
+    for opinion_tuple in raw_opinions:
+        opinion_uuid = opinion_tuple[0]
+        opinion_content = opinion_tuple[1]
+        opinion_text = opinion_tuple[2]
+        username = opinion_tuple[3]
+        weight = opinion_tuple[4]
+
+        if opinion_uuid in opinion_dict:
+            opinion_dict[opinion_uuid]["opinions"].append(
+                (opinion_text, weight, username)
+            )
         else:
-            opinion_dict[uuid]["opinions"].append((opinion, weight, username))
+            # Topic not found in all_topics (shouldn't happen)
+            opinion_dict[opinion_uuid] = {
+                "content": opinion_content,
+                "opinions": [(opinion_text, weight, username)]
+            }
 
     print(opinion_dict)
 
     return {"opinions": opinion_dict}
+
+
+@routes.route('/admin/<uuid_param>', methods=['DELETE'])
+def delete_topic_endpoint(uuid_param):
+    """Delete a topic and all its related data"""
+    
+    # Verify topic exists
+    result = db.get_content_by_uuid(uuid_param)
+    if not result:
+        return {"error": "Topic not found"}, 404
+    
+    try:
+        db.delete_topic(uuid_param)
+        return {"message": "Topic deleted successfully"}, 200
+    except Exception as e:
+        print(f"Error deleting topic: {e}")
+        return {"error": "Failed to delete topic"}, 500
+
+
+@routes.route('/admin/<uuid_param>/opinion', methods=['POST'])
+def add_manual_opinion(uuid_param):
+    """Add a manual opinion for a topic (admin only, no session required)"""
+    
+    # Verify topic exists
+    result = db.get_content_by_uuid(uuid_param)
+    if not result:
+        return {"error": "Topic not found"}, 404
+    
+    # RequestBody
+    data = request.get_json()
+    opinion = data.get("opinion")
+    rating = data.get("rating")
+    username = data.get("username", "admin")
+    
+    # Validate request body
+    if not opinion:
+        return {"error": "opinion is required"}, 400
+    if rating is None:
+        return {"error": "rating is required"}, 400
+    if not isinstance(rating, int) or rating < 1 or rating > 10:
+        return {"error": "rating must be between 1 and 10"}, 400
+    
+    try:
+        # Create or update user (for admin opinions, we'll use the provided username)
+        session_id = str(uuid.uuid4())
+        db.insert_user(username, session_id)
+        
+        # Insert the opinion
+        db.insert_raw_opinion(username, uuid_param, opinion, rating)
+        
+        return {"message": "Opinion added successfully"}, 200
+    except Exception as e:
+        print(f"Error adding opinion: {e}")
+        return {"error": "Failed to add opinion"}, 500
 
 
 # maybe a useless functionality
@@ -149,7 +223,14 @@ def login():
     db.insert_user(username, session_id)
 
     resp = make_response({"message": "Login successful"})
-    resp.set_cookie("sessionCookie", session_id, httponly=True, samesite="Strict")
+    # Set cookie with path=/ to ensure it's available for all routes
+    resp.set_cookie(
+        "sessionCookie", 
+        session_id, 
+        httponly=True, 
+        samesite="Lax",  # Changed from Strict to Lax for better compatibility
+        path="/"
+    )
 
     return resp
 
@@ -165,14 +246,20 @@ def poll(uuid_param):
     opinion = data.get("opinion")
     rating = data.get("rating")
 
-    # Example placeholder logic
+    # Check for session cookie
     if not session_cookie:
         return {"error": "missing session cookie"}, 401
+    
+    # Validate request body
     if not opinion or rating is None:
         return {"error": "opinion and rating are required"}, 400
     
+    # Get username from session
     username = db.get_username_by_session_id(session_cookie)
-    # error if session_cookie does not exist
+    if not username:
+        return {"error": "invalid session cookie"}, 401
+    
+    # Insert opinion
     db.insert_raw_opinion(username, uuid_param, opinion, rating)
     return {"message": "Poll response recorded"}
 
@@ -186,10 +273,65 @@ def live(uuid_param):
         return {"error": "missing session cookie"}, 401
 
     username = db.get_username_by_session_id(session_cookie)
-    is_leader = db.is_leader(uuid_param, username)
-    # TODO send more data (tbd)
+    
+    # Get topic information
+    result = db.get_content_by_uuid(uuid_param)
+    if not result:
+        return {"error": "Topic not found"}, 404
+    
+    topic_content = result[0]
+    
+    # Get raw opinions for this topic
+    raw_opinions_data = db.get_raw_opinions_for_topic(uuid_param)
+    opinions = [
+        {
+            "opinion": op["opinion"],
+            "author": op["username"]
+        }
+        for op in raw_opinions_data
+    ]
+    
+    # Get chat messages with sentiment if available
+    try:
+        messages_data = db.get_chat_messages_with_sentiment(limit=100)
+    except Exception:
+        # Fallback to regular messages if sentiment fails
+        messages_data = db.get_chat_messages(limit=100)
+    
+    # Transform messages to expected format
+    # Note: ChatMessage table doesn't store author, so we use a placeholder
+    # Convert timestamp (unix seconds) to ISO string for JavaScript Date compatibility
+    sorted_messages = []
+    for msg in messages_data:
+        timestamp = msg.get("timestamp", 0)
+        # Convert unix timestamp (seconds) to ISO string
+        # If timestamp is 0 or invalid, use current time
+        if timestamp and timestamp > 0:
+            try:
+                # Timestamp is in seconds, convert to datetime then ISO string
+                dt = datetime.datetime.fromtimestamp(timestamp)
+                timestamp_str = dt.isoformat()
+            except (ValueError, OSError):
+                timestamp_str = datetime.datetime.now().isoformat()
+        else:
+            timestamp_str = datetime.datetime.now().isoformat()
+        
+        sorted_messages.append({
+            "text": msg.get("message", msg.get("text", "")),
+            "author": msg.get("author", "Unknown"),
+            "timestamp": timestamp_str,
+            "sentiment": msg.get("sentiment"),
+            "clusterId": msg.get("clusterId")
+        })
+    
+    # Solutions array (empty for now, can be populated later)
+    solutions = []
+    
     return {
-        "isLeader": is_leader
+        "problemTitle": topic_content,
+        "opinions": opinions,
+        "solutions": solutions,
+        "sortedMessages": sorted_messages
     }
 
 
@@ -209,8 +351,27 @@ def get_clusters(uuid_param):
         return {"error": "Topic not found"}, 404
     
     clusters = db.get_clustered_opinions_with_raw_opinions(uuid_param)
-    cluster_data = {"clusters": clusters}
-    title, prompt = choose_proposed_solutions(cluster_data)
-    mistral_result = ask_mistral(prompt)
-
-    return {"title":title, "mistral_result":mistral_result}
+    
+    # Ensure clusters have the correct field names expected by frontend
+    # Frontend expects: cluster_id, heading (not current_heading), leader_id, raw_opinions
+    # Optional: sentiment_avg, engagement, position2d
+    formatted_clusters = []
+    for cluster in clusters:
+        formatted_cluster = {
+            "cluster_id": cluster.get("cluster_id"),
+            "heading": cluster.get("heading") or cluster.get("current_heading"),
+            "leader_id": cluster.get("leader_id"),
+            "raw_opinions": cluster.get("raw_opinions", []),
+        }
+        # Add optional fields if they exist
+        if "sentiment_avg" in cluster:
+            formatted_cluster["sentiment_avg"] = cluster["sentiment_avg"]
+        if "engagement" in cluster:
+            formatted_cluster["engagement"] = cluster["engagement"]
+        if "position2d" in cluster:
+            formatted_cluster["position2d"] = cluster["position2d"]
+        
+        formatted_clusters.append(formatted_cluster)
+    
+    # Return clusters array as expected by frontend
+    return {"clusters": formatted_clusters}

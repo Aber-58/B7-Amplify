@@ -250,6 +250,32 @@ def replace_clusters_for_topic(clusters_data: list, topic_uuid: str) -> list:
         conn.close()
 
 
+def reset_everything():
+    """Reset entire database - delete all topics, opinions, clusters, votes, messages"""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+    
+    try:
+        # Delete in order respecting foreign key constraints
+        c.execute("DELETE FROM LeaderVote;")
+        c.execute("DELETE FROM RawOpinionClusteredOpinion;")
+        c.execute("DELETE FROM ChatMessage;")
+        c.execute("DELETE FROM RawOpinion;")
+        c.execute("DELETE FROM ClusteredOpinion;")
+        c.execute("DELETE FROM Topics;")
+        # Note: We keep User table as it might contain session data
+        
+        conn.commit()
+        print("Database reset: All topics, opinions, clusters, votes, and messages deleted")
+    except sqlite3.Error as e:
+        conn.rollback()
+        print("Database error during reset:", e)
+        raise e
+    finally:
+        conn.close()
+
+
 #------- GETTER ---------
 
 def get_raw_opinions_for_topic(topic_uuid: str) -> list:
@@ -314,6 +340,22 @@ def raw_opinion_submitted(uuid, username) -> bool:
     exists = c.fetchone() is not None
     conn.close()
     return exists
+
+
+def get_all_topics() -> list:
+    """Get all topics regardless of whether they have opinions"""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    c.execute("""
+        SELECT uuid, content, current_state, deadline
+        FROM Topics;
+    """)
+
+    result = c.fetchall()
+    conn.close()
+    return result
 
 
 def get_raw_opinions() -> list:
@@ -444,3 +486,49 @@ def get_chat_messages_with_sentiment(limit: int = 100) -> list:
         msg['sentiment'] = sentiment_results[i] if i < len(sentiment_results) else None
     
     return messages
+
+
+#------- DELETE ---------
+
+def delete_topic(topic_uuid: str):
+    """Delete a topic and all related data (raw opinions, clusters, votes, etc.)"""
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    c.execute("PRAGMA foreign_keys = ON;")
+
+    try:
+        # Delete leader votes for this topic
+        c.execute("""
+            DELETE FROM LeaderVote WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        # Delete raw opinion to clustered opinion mappings
+        c.execute("""
+            DELETE FROM RawOpinionClusteredOpinion
+            WHERE clustered_opinion_id IN (
+                SELECT cluster_id FROM ClusteredOpinion WHERE uuid = ?
+            );
+        """, (topic_uuid,))
+
+        # Delete raw opinions for this topic
+        c.execute("""
+            DELETE FROM RawOpinion WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        # Delete clustered opinions for this topic
+        c.execute("""
+            DELETE FROM ClusteredOpinion WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        # Delete the topic itself
+        c.execute("""
+            DELETE FROM Topics WHERE uuid = ?;
+        """, (topic_uuid,))
+
+        conn.commit()
+    except sqlite3.Error as e:
+        conn.rollback()
+        print("Database error deleting topic:", e)
+        raise e
+    finally:
+        conn.close()

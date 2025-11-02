@@ -1,46 +1,88 @@
-# Getting Started with Create React App
+# consensus.io
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Collective intelligence platform - Collect opinions, cluster similar ideas using AI, and visualize collective insights in real-time.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- 🎨 Hand-drawn aesthetic (ScribbleMind style)
+- 📊 Real-time cluster visualization
+- 💬 Interactive chat interface
+- 📱 Fully responsive design
+- 🔄 Real-time updates via WebSocket
+- ♿ Accessibility compliant
 
-### `npm start`
+## Quick Start
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Development
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+```bash
+npm install
+npm start
+```
 
-### `npm test`
+Visit `http://localhost:3000` and navigate to `/dev` for the showcase with mock data.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Production Build
 
-### `npm run build`
+```bash
+npm run build
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## User Flow
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. **Admin** creates topic at `/admin`
+2. **QR Code** shared via `/invite/:uuid`
+3. **Participants** join via `/join/:uuid`
+4. **Submit opinions** at `/poll/:uuid`
+5. **View results** at `/live/:uuid` with cluster visualization
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Backend Integration
 
-### `npm run eject`
+See [BACKEND_INTEGRATION.md](./BACKEND_INTEGRATION.md) for complete API documentation.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Quick Setup
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. Set backend API URL:
+   ```env
+   REACT_APP_API_URL=http://localhost:4200/api
+   REACT_APP_WS_URL=ws://localhost:4200
+   ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+2. Ensure backend implements required endpoints (see documentation)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+3. Start backend server on port 4200
 
-## Learn More
+## Documentation
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **[BACKEND_INTEGRATION.md](./BACKEND_INTEGRATION.md)** - API endpoints and integration guide
+- **[USER_FLOW.md](./USER_FLOW.md)** - Complete user journey documentation
+- **[DEMO_WALKTHROUGH.md](./DEMO_WALKTHROUGH.md)** - Step-by-step demo guide
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Tech Stack
+
+- React + TypeScript
+- TailwindCSS
+- Framer Motion
+- RoughJS (hand-drawn graphics)
+- d3-force (physics simulation)
+- Zustand (state management)
+
+## Project Structure
+
+```
+src/
+├── components/      # UI components (CloudMap, ChatBox, etc.)
+├── routes/          # Page components (Admin, Poll, Live, etc.)
+├── service/         # API integration layer
+├── store/           # Global state (Zustand)
+├── lib/             # Utilities (motion, colors, websocket)
+└── types/           # TypeScript declarations
+```
+
+## Demo Mode
+
+Visit `/dev` to see all pages and components with mock data - no backend required!
+
+## License
+
+MIT
