@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sentimentColors, sentimentLabel } from '../lib/colors';
+import { getMessageSentimentColor } from '../lib/colors';
 
 export interface Message {
   text: string;
@@ -44,38 +44,26 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
   const chatUserCount = uniqueAuthors.size || activeUsers || 0;
 
   return (
-    <div className="flex flex-col h-full max-h-[400px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-ink/10 overflow-hidden">
+    <div className="flex flex-col h-full max-h-[400px] bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-ink/20 overflow-hidden">
       {/* Header with user count */}
-      <div className="relative bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50 border-b border-ink/10 px-5 py-3 flex items-center justify-between overflow-hidden">
-        {/* Decorative background */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-32 h-32 bg-purple-300 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 right-0 w-32 h-32 bg-pink-300 rounded-full blur-2xl"></div>
-        </div>
-        
-        <div className="relative flex items-center gap-3">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="text-2xl"
-          >
-            💬
-          </motion.div>
-          <h3 className="font-display font-bold text-ink text-base">Live Chat</h3>
+      <div className="relative bg-gradient-to-r from-purple-100/50 via-pink-100/50 to-purple-100/50 border-b-2 border-purple-200/50 px-4 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">💬</span>
+          <h3 className="font-display font-semibold text-ink text-sm">Live Chat</h3>
         </div>
         
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="relative flex items-center gap-2 px-4 py-1.5 bg-white/80 backdrop-blur-sm rounded-full border border-green-300 shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1 bg-green-100 rounded-full border border-green-300"
         >
           <motion.div
-            animate={{ scale: [1, 1.3, 1] }}
+            animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-2.5 h-2.5 bg-green-500 rounded-full shadow-sm"
+            className="w-2 h-2 bg-green-500 rounded-full"
           />
-          <span className="font-display text-xs font-semibold text-green-700">
-            {chatUserCount} {chatUserCount === 1 ? 'active' : 'active'}
+          <span className="font-display text-xs font-medium text-green-700">
+            {chatUserCount} active
           </span>
         </motion.div>
       </div>
@@ -97,10 +85,12 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         ) : (
           <AnimatePresence>
             {messages.map((message, index) => {
-              const sentiment = message.sentiment ?? 0;
-              const label = sentimentLabel(sentiment);
-              const sentimentColor = sentimentColors[label];
               const isOwnMessage = message.author === currentUsername;
+
+              // Get sentiment-based background color for the message
+              const messageColor = message.sentiment !== undefined 
+                ? getMessageSentimentColor(message.sentiment)
+                : undefined;
 
               return (
                 <motion.div
@@ -121,21 +111,34 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                     </motion.div>
                   )}
                   <div
-                    className={`max-w-[75%] rounded-2xl p-4 shadow-lg transition-all ${
+                    className={`max-w-[75%] rounded-2xl p-3 shadow-md transition-all ${
                       isOwnMessage
                         ? 'bg-gradient-to-br from-purple-500 via-purple-600 to-pink-500 text-white rounded-tr-sm'
-                        : 'bg-white/95 backdrop-blur-sm border border-ink/10 hover:border-ink/20'
+                        : message.sentiment !== undefined
+                          ? 'text-white rounded-tl-sm border-2'
+                          : 'bg-white/95 backdrop-blur-sm border border-ink/10 hover:border-ink/20'
                     }`}
                     style={{
-                      borderColor: !isOwnMessage && message.sentiment !== undefined ? sentimentColor + '40' : undefined,
+                      backgroundColor: !isOwnMessage && message.sentiment !== undefined 
+                        ? messageColor 
+                        : undefined,
+                      borderColor: !isOwnMessage && message.sentiment === undefined 
+                        ? undefined 
+                        : message.sentiment !== undefined 
+                          ? messageColor 
+                          : undefined,
                       boxShadow: isOwnMessage 
-                        ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
-                        : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                        ? '0 3px 10px rgba(139, 92, 246, 0.3)' 
+                        : message.sentiment !== undefined
+                          ? `0 3px 10px ${messageColor}50`
+                          : '0 2px 6px rgba(0, 0, 0, 0.08)',
                     }}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`font-display text-xs font-semibold ${
-                        isOwnMessage ? 'text-white/90' : 'text-ink/70'
+                        isOwnMessage || message.sentiment !== undefined 
+                          ? 'text-white/95' 
+                          : 'text-ink/70'
                       }`}>
                         {message.author}
                       </span>
@@ -144,8 +147,8 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className={`text-xs px-2 py-0.5 rounded-full font-display font-medium ${
-                            isOwnMessage
-                              ? 'bg-white/20 text-white'
+                            isOwnMessage || message.sentiment !== undefined
+                              ? 'bg-white/25 text-white backdrop-blur-sm'
                               : 'bg-purple-100 text-purple-700'
                           }`}
                         >
@@ -154,23 +157,26 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                       )}
                     </div>
                     <p className={`font-display text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                      isOwnMessage ? 'text-white' : 'text-ink'
+                      isOwnMessage || message.sentiment !== undefined 
+                        ? 'text-white' 
+                        : 'text-ink'
                     }`}>
                       {message.text}
                     </p>
-                    {message.sentiment !== undefined && !isOwnMessage && (
-                      <div className="mt-3 h-1.5 w-full rounded-full bg-ink/10 overflow-hidden">
+                    {message.sentiment !== undefined && (
+                      <div className="mt-3 h-1.5 w-full rounded-full bg-white/20 overflow-hidden backdrop-blur-sm">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${((message.sentiment + 1) / 2) * 100}%` }}
                           transition={{ duration: 0.5, ease: "easeOut" }}
-                          className="h-full rounded-full"
-                          style={{ background: sentimentColor }}
+                          className="h-full rounded-full bg-white/60"
                         />
                       </div>
                     )}
                     <div className={`text-xs mt-2 font-display ${
-                      isOwnMessage ? 'text-white/70' : 'text-ink/50'
+                      isOwnMessage || message.sentiment !== undefined 
+                        ? 'text-white/70' 
+                        : 'text-ink/50'
                     }`}>
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>

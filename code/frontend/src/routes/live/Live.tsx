@@ -6,9 +6,11 @@ import { Navigation } from "../Navigation";
 import { CloudMap } from "../../components/CloudMap";
 import { ChatBox, Message } from "../../components/ChatBox";
 import { Layout } from "../../components/Layout";
+import { TimerProgress } from "../../components/TimerProgress";
+import { ThankYouScreen } from "../../components/ThankYouScreen";
 import { useClusterStore } from "../../store/clusterStore";
 import { getWebSocketService } from "../../lib/ws";
-import { calculateClusterSentiment } from "../../lib/sentiment";
+import { calculateClusterSentiment, calculateTextSentiment } from "../../lib/sentiment";
 import type { Cluster } from "../../store/clusterStore";
 
 // Fun encouraging messages
@@ -25,15 +27,6 @@ const ENCOURAGING_MESSAGES = [
   "⚡ Energy building up!",
 ];
 
-// Funny messages for timer urgency
-const TIMER_URGENCY_MESSAGES = [
-  "⚡ Time is running out! Share your thoughts now!",
-  "🔥 The round is ending soon! Don't miss out!",
-  "⏰ Hurry up! Only {time}s left!",
-  "🎯 Last chance! Speak up before it's too late!",
-  "💨 Quick! The clock is ticking!",
-  "🚀 Final moments! Make your voice heard!",
-];
 
 function Live() {
   const { uuid } = useParams();
@@ -43,7 +36,6 @@ function Live() {
   const [topic, setTopic] = useState<string>("");
   const [previousClusterCount, setPreviousClusterCount] = useState(0);
   const [achievement, setAchievement] = useState<string | null>(null);
-  const [encouragingMessage, setEncouragingMessage] = useState<string>("");
   const [liveStats, setLiveStats] = useState({ totalOpinions: 0, totalClusters: 0, activeParticipants: 0 });
   const [timer, setTimer] = useState<number | null>(null);
   const [showWinner, setShowWinner] = useState(false);
@@ -54,19 +46,18 @@ function Live() {
   // Get clusters for current topic UUID
   const clusters = uuid ? (clustersMap[uuid] || []) : [];
   
-  // Calculate cluster size (helper function)
-  const calculateClusterSize = (cluster: Cluster): number => {
-    const baseOpinions = cluster.raw_opinions?.length || 0;
-    const messageCount = messages.filter(m => m.clusterId === cluster.cluster_id).length;
-    return baseOpinions + messageCount * 2; // Messages count more
-  };
-  
   // Find biggest cluster (winner)
   const findWinner = useMemo(() => {
     if (clusters.length === 0) return null;
     return clusters.reduce((prev, current) => {
-      const prevSize = calculateClusterSize(prev);
-      const currentSize = calculateClusterSize(current);
+      const prevBaseOpinions = prev.raw_opinions?.length || 0;
+      const prevMessageCount = messages.filter(m => m.clusterId === prev.cluster_id).length;
+      const prevSize = prevBaseOpinions + prevMessageCount * 2;
+      
+      const currentBaseOpinions = current.raw_opinions?.length || 0;
+      const currentMessageCount = messages.filter(m => m.clusterId === current.cluster_id).length;
+      const currentSize = currentBaseOpinions + currentMessageCount * 2;
+      
       return currentSize > prevSize ? current : prev;
     });
   }, [clusters, messages]);
@@ -93,21 +84,19 @@ function Live() {
           // Gamification: Check for achievements
           const newClusterCount = transformedClusters.length;
           if (newClusterCount > previousClusterCount && previousClusterCount > 0) {
-            // Clusters increased - celebrate!
-            const randomMessage = ENCOURAGING_MESSAGES[Math.floor(Math.random() * ENCOURAGING_MESSAGES.length)];
-            setEncouragingMessage(randomMessage);
-            setTimeout(() => setEncouragingMessage(""), 3000);
-            
             // Award badges based on cluster count
-            if (newClusterCount >= 5 && previousClusterCount < 5) {
-              setAchievement("🏆 Cluster Master!");
-              addBadge("Cluster Master");
-            } else if (newClusterCount >= 10 && previousClusterCount < 10) {
+            if (newClusterCount >= 10 && previousClusterCount < 10) {
               setAchievement("🌟 Pattern Expert!");
               addBadge("Pattern Expert");
+            } else if (newClusterCount >= 5 && previousClusterCount < 5) {
+              setAchievement("🏆 Cluster Master!");
+              addBadge("Cluster Master");
             } else if (newClusterCount >= 3 && previousClusterCount < 3) {
               setAchievement("🎯 First Clusters!");
               addBadge("First Clusters");
+            } else {
+              // Generic achievement for new cluster
+              setAchievement("🎉 New Cluster Formed!");
             }
             
             if (achievementTimeoutRef.current) {
@@ -173,9 +162,9 @@ function Live() {
               // Check for achievements on update
               const newClusterCount = transformedClusters.length;
               if (newClusterCount > previousClusterCount && previousClusterCount > 0) {
-                const randomMessage = ENCOURAGING_MESSAGES[Math.floor(Math.random() * ENCOURAGING_MESSAGES.length)];
-                setEncouragingMessage(randomMessage);
-                setTimeout(() => setEncouragingMessage(""), 3000);
+                // Achievement unlocked!
+                setAchievement("🎉 New Cluster Formed!");
+                setTimeout(() => setAchievement(null), 3000);
               }
               setPreviousClusterCount(newClusterCount);
               
@@ -261,22 +250,34 @@ function Live() {
     };
   }, [uuid, findWinner]);
   
-  // Show urgency messages as timer runs low
-  useEffect(() => {
-    if (timer !== null && timer <= 30 && timer > 0) {
-      const urgencyMsg = TIMER_URGENCY_MESSAGES[Math.floor(Math.random() * TIMER_URGENCY_MESSAGES.length)]
-        .replace('{time}', timer.toString());
-      setEncouragingMessage(urgencyMsg);
-      setTimeout(() => setEncouragingMessage(""), 2000);
-    }
-  }, [timer]);
+  // Removed annoying timer notifications
 
   const handleSendMessage = (text: string) => {
-    // TODO: Implement sending message via API
+    // Calculate sentiment for the message
+    const sentiment = calculateTextSentiment(text);
+    
+    // Find the best matching cluster for this message
+    const bestCluster = clusters.length > 0 
+      ? clusters.reduce((prev, current) => {
+          // Simple similarity: check if message text contains cluster heading keywords
+          const heading = current.heading || '';
+          const headingWords = heading.toLowerCase().split(/\s+/);
+          const messageWords = text.toLowerCase().split(/\s+/);
+          const prevHeadingWords = (prev.heading || '').toLowerCase().split(/\s+/);
+          
+          const currentMatch = headingWords.filter(w => messageWords.includes(w)).length;
+          const prevMatch = prevHeadingWords.filter(w => messageWords.includes(w)).length;
+          
+          return currentMatch > prevMatch ? current : prev;
+        })
+      : null;
+    
     const newMessage: Message = {
       text,
       author: "You",
       timestamp: new Date(),
+      sentiment,
+      clusterId: bestCluster?.cluster_id,
     };
     setMessages((prev) => [...prev, newMessage]);
   };
@@ -284,189 +285,27 @@ function Live() {
   return (
     <Layout showHeader={true} showLegend={true}>
       <div className="max-w-7xl mx-auto p-6 space-y-6 relative">
-        {/* Timer - aesthetic design */}
+        {/* Timer Progress Bar */}
         {timer !== null && timer >= 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: -50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed top-24 right-6 z-50"
-          >
-            <motion.div
-              animate={{
-                x: timer <= 30 ? [0, -4, 4, -4, 4, 0] : 0,
-                y: timer <= 30 ? [0, -2, 2, -2, 2, 0] : 0,
-                scale: timer <= 10 ? [1, 1.08, 1] : 1,
-              }}
-              transition={{
-                duration: 0.4,
-                repeat: timer <= 30 ? Infinity : 0,
-                repeatDelay: 0.3,
-              }}
-              className="relative overflow-hidden rounded-3xl shadow-2xl backdrop-blur-md border-2"
-              style={{
-                background: timer <= 10
-                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                  : timer <= 30
-                  ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
-                  : 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-                borderColor: timer <= 10
-                  ? 'rgba(255, 255, 255, 0.4)'
-                  : timer <= 30
-                  ? 'rgba(255, 255, 255, 0.4)'
-                  : 'rgba(255, 255, 255, 0.3)',
-              }}
-            >
-              {/* Animated background glow */}
-              <motion.div
-                animate={{
-                  opacity: [0.3, 0.6, 0.3],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                }}
-                className="absolute inset-0 bg-white/20 blur-xl"
-              />
-              
-              <div className="relative px-6 py-4 flex items-center gap-4">
-                {/* Clock icon */}
-                <motion.div
-                  animate={timer <= 30 ? { rotate: [0, -12, 12, -12, 12, 0] } : { rotate: 0 }}
-                  transition={{ 
-                    duration: 0.5, 
-                    repeat: timer <= 30 ? Infinity : 0,
-                    ease: "easeInOut"
-                  }}
-                  className="text-4xl"
-                >
-                  ⏰
-                </motion.div>
-                
-                {/* Timer content */}
-                <div className="flex flex-col">
-                  <div className="flex items-baseline gap-2">
-                    <motion.span
-                      key={timer}
-                      initial={{ scale: 1.5 }}
-                      animate={{ scale: 1 }}
-                      className="font-display font-bold text-3xl text-white tracking-tight"
-                    >
-                      {timer}
-                    </motion.span>
-                    <span className="font-display text-sm text-white/90 font-medium">s</span>
-                  </div>
-                  
-                  {timer <= 30 && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="font-display text-xs text-white/90 font-medium mt-0.5"
-                    >
-                      {timer <= 10 ? '⚠️ Almost over!' : '⏱️ Time running out!'}
-                    </motion.p>
-                  )}
-                </div>
-                
-                {/* Pulsing indicator */}
-                {timer <= 30 && (
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className={`w-3 h-3 rounded-full ${
-                      timer <= 10 ? 'bg-red-200' : 'bg-orange-200'
-                    }`}
-                  />
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+          <TimerProgress current={timer} total={45} />
         )}
 
-        {/* Winner Screen */}
+        {/* Thank You Screen */}
         <AnimatePresence>
           {showWinner && winner && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.5, opacity: 0, y: 50 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.5, opacity: 0, y: 50 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 relative overflow-hidden"
-              >
-                {/* Background decoration */}
-                <div className="absolute inset-0 opacity-10 pointer-events-none">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500 rounded-full blur-3xl"></div>
-                  <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500 rounded-full blur-3xl"></div>
-                </div>
-                
-                <div className="relative z-10 text-center space-y-6">
-                  {/* Winner emoji */}
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                    className="text-8xl"
-                  >
-                    🏆
-                  </motion.div>
-                  
-                  {/* Title */}
-                  <h2 className="font-display font-bold text-4xl text-ink">
-                    Round Complete! 🎉
-                  </h2>
-                  
-                  {/* Winner cluster */}
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-4 border-purple-300">
-                    <p className="font-display text-lg text-ink/70 mb-2">
-                      The winning cluster:
-                    </p>
-                    <h3 className="font-display font-bold text-3xl text-purple-700 mb-3">
-                      {winner.heading || `Cluster ${winner.cluster_id}`}
-                    </h3>
-                    <div className="flex items-center justify-center gap-6 text-sm text-ink/60 font-display">
-                      <div>
-                        <span className="font-semibold">{calculateClusterSize(winner)}</span> total engagement
-                      </div>
-                      <div>•</div>
-                      <div>
-                        <span className="font-semibold">{winner.raw_opinions?.length || 0}</span> opinions
-                      </div>
-                      <div>•</div>
-                      <div>
-                        <span className="font-semibold">{messages.filter(m => m.clusterId === winner.cluster_id).length}</span> messages
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Thank you message */}
-                  <p className="font-display text-lg text-ink/70">
-                    Thank you for participating! 🙏
-                  </p>
-                  <p className="font-display text-base text-ink/60">
-                    Your voice helped shape the discussion.
-                  </p>
-                  
-                  {/* Close button */}
-                  <motion.button
-                    onClick={() => {
-                      setShowWinner(false);
-                      setTimer(null);
-                    }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-display font-semibold shadow-lg hover:shadow-xl transition-all"
-                  >
-                    Continue Viewing
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
+            <ThankYouScreen
+              winner={{
+                heading: winner.heading || `Cluster ${winner.cluster_id}`,
+                cluster_id: winner.cluster_id,
+                totalEngagement: (winner.raw_opinions?.length || 0) + (messages.filter(m => m.clusterId === winner.cluster_id).length * 2),
+                opinionsCount: winner.raw_opinions?.length || 0,
+                messagesCount: messages.filter(m => m.clusterId === winner.cluster_id).length,
+              }}
+              onClose={() => {
+                setShowWinner(false);
+                setTimer(null);
+              }}
+            />
           )}
         </AnimatePresence>
 
@@ -486,21 +325,28 @@ function Live() {
           )}
         </AnimatePresence>
 
-        {/* Encouraging Message */}
-        <AnimatePresence>
-          {encouragingMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="fixed top-32 left-1/2 transform -translate-x-1/2 z-40 pointer-events-none"
-            >
-              <div className="bg-green-500/90 text-white px-6 py-3 rounded-lg shadow-lg font-display text-lg font-semibold">
-                {encouragingMessage}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Gamification: Points & Achievements */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="fixed top-4 left-4 z-40 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border-2 border-purple-200 p-3"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col">
+              <span className="font-display text-xs text-ink/60">Points</span>
+              <span className="font-display font-bold text-2xl text-purple-600">
+                {liveStats.totalOpinions * 10 + messages.length * 5}
+              </span>
+            </div>
+            <div className="w-px h-8 bg-ink/20"></div>
+            <div className="flex flex-col">
+              <span className="font-display text-xs text-ink/60">Streak</span>
+              <span className="font-display font-bold text-xl text-pink-600">
+                {messages.length > 5 ? '🔥' : messages.length > 2 ? '⭐' : '✨'}
+              </span>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Topic Title */}
         {topic && (

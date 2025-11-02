@@ -74,3 +74,35 @@ export const sentimentColors = {
   neutral: '#9AA0A6',
   positive: '#3ECF8E',
 } as const;
+
+/**
+ * Get message bubble color based on sentiment intensity
+ * Maps sentiment from -1 to 1 to a color gradient:
+ * -1.0 (100% negative) -> dark red
+ * -0.4 (40% negative) -> light red
+ * 0 (neutral) -> gray
+ * 0.4 (40% positive) -> light green
+ * 1.0 (100% positive) -> dark green
+ */
+export const getMessageSentimentColor = (sentiment: number): string => {
+  const clamped = Math.max(-1, Math.min(1, sentiment));
+  
+  if (clamped < 0) {
+    // Negative: from light red to dark red
+    // Map -1 to -0.01 onto 0 to 1
+    const intensity = Math.abs(clamped); // 0 to 1
+    const lightness = 85 - (intensity * 25); // 85% (light) to 60% (dark)
+    const saturation = 60 + (intensity * 30); // 60% to 90%
+    return `hsl(0, ${saturation}%, ${lightness}%)`; // Red hue
+  } else if (clamped > 0) {
+    // Positive: from light green to dark green
+    // Map 0.01 to 1 onto 0 to 1
+    const intensity = clamped; // 0 to 1
+    const lightness = 85 - (intensity * 25); // 85% (light) to 60% (dark)
+    const saturation = 60 + (intensity * 30); // 60% to 90%
+    return `hsl(140, ${saturation}%, ${lightness}%)`; // Green hue
+  } else {
+    // Neutral: gray
+    return `hsl(0, 0%, 75%)`;
+  }
+};

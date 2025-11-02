@@ -63,6 +63,7 @@ export const CloudMap: React.FC<CloudMapProps> = ({
   const [selectedCluster, setSelectedCluster] = useState<Cluster | null>(null);
   const [nodes, setNodes] = useState<ClusterNode[]>([]);
   const [messageBubbles, setMessageBubbles] = useState<MessageBubble[]>([]);
+  const [shakingClusters, setShakingClusters] = useState<Set<number>>(new Set());
   const simulationRef = useRef<d3.Simulation<ClusterNode> | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const roughElementsRef = useRef<Map<number, any>>(new Map());
@@ -201,15 +202,28 @@ export const CloudMap: React.FC<CloudMapProps> = ({
         setTimeout(() => {
           setMessageBubbles(prev => prev.filter(b => !newBubbles.some(nb => nb.id === b.id)));
           
-          // Update node radii and recalculate sentiment to reflect new messages
+          // Update node radii and recalculate sentiment - ONLY for clusters that received messages
+          const affectedClusterIds = new Set(newBubbles.map(b => b.targetClusterId));
+          
+          // Add shake effect to affected clusters
+          setShakingClusters(new Set(affectedClusterIds));
+          setTimeout(() => {
+            setShakingClusters(new Set());
+          }, 1000);
+          
           setNodes(prev => prev.map(node => {
+            // Only update clusters that received messages
+            if (!affectedClusterIds.has(node.cluster.cluster_id)) {
+              return node; // Return unchanged if no messages
+            }
+            
             const messageCount = clusterMessageCountsRef.current.get(node.cluster.cluster_id) || 0;
             const clusterMessages = clusterMessagesRef.current.get(node.cluster.cluster_id) || [];
             const newFrequency = calculateKeywordFrequency(node.cluster, messageCount);
             const frequencyFactor = Math.sqrt(Math.min(newFrequency / 10, 5));
             const newRadius = Math.max(20, Math.min(100, 25 * (1 + frequencyFactor)));
             
-            // Recalculate sentiment including messages (always recalculate)
+            // Recalculate sentiment including messages (only for affected clusters)
             const allSentiments: number[] = [];
             
             // Add sentiments from raw opinions
@@ -225,11 +239,9 @@ export const CloudMap: React.FC<CloudMapProps> = ({
             });
             
             // Calculate average sentiment
-            let sentiment = 0;
+            let sentiment = node.cluster.sentiment_avg ?? 0;
             if (allSentiments.length > 0) {
               sentiment = allSentiments.reduce((a, b) => a + b, 0) / allSentiments.length;
-            } else if (node.cluster.sentiment_avg !== undefined) {
-              sentiment = node.cluster.sentiment_avg;
             }
             
             return {
@@ -255,10 +267,17 @@ export const CloudMap: React.FC<CloudMapProps> = ({
     return Math.max(20, Math.min(100, baseRadius * (1 + frequencyFactor)));
   };
 
-  // Initialize nodes from clusters
+  // Initialize nodes from clusters - updates when clusters or messages change
   const initializedNodes = useMemo(() => {
     return clusters.map((cluster, i) => {
-      const messageCount = clusterMessageCountsRef.current.get(cluster.cluster_id) || 0;
+      // Count messages for this cluster
+      const clusterMessages = messages.filter(m => m.clusterId === cluster.cluster_id);
+      const messageCount = clusterMessages.length;
+      clusterMessageCountsRef.current.set(cluster.cluster_id, messageCount);
+      
+      // Store messages for sentiment calculation
+      clusterMessagesRef.current.set(cluster.cluster_id, clusterMessages);
+      
       const radius = getClusterRadius(cluster, messageCount);
       const x = cluster.position2d ? cluster.position2d.x * width : (i % 4) * (width / 4) + width / 8;
       const y = cluster.position2d ? cluster.position2d.y * height : Math.floor(i / 4) * (height / 3) + height / 6;
@@ -272,7 +291,7 @@ export const CloudMap: React.FC<CloudMapProps> = ({
         messageCount,
       };
     });
-  }, [clusters, width, height]);
+  }, [clusters, messages, width, height]);
 
   // Setup d3-force simulation
   useEffect(() => {
