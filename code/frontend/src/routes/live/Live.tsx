@@ -1,9 +1,8 @@
 import Opinion from "./opinion/Opinion";
 import {useEffect, useState} from "react";
-import {useNavigate, useParams} from "react-router";
-import {getClusterCircleSize, getClusters, getLiveClusters, handleError} from "../../service/fetchService";
+import {useParams} from "react-router";
+import {getLiveClusters} from "../../service/fetchService";
 import './Live.css'
-import {Navigation} from "../Navigation";
 import {LiveViewResponse} from "../../service/model/LiveViewResponse";
 
 
