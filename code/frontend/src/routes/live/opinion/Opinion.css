@@ -1,18 +1,4 @@
-.center-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 3rem;
-    padding: 1rem;
-}
 
-@media (max-width: 768px) {
-    .center-grid {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-}
 
 .circle {
     position: relative;
@@ -27,6 +13,7 @@
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
     z-index: 1;
+    overflow: visible;
 }
 
 .circle:hover {
@@ -34,15 +21,13 @@
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
 }
 
-
-
 @keyframes pulse {
     0% {
         transform: translate(-50%, -50%) scale(1);
         opacity: 0.6;
     }
     50% {
-        transform: translate(-50%, -50%) scale(1.5); /* bigger wave */
+        transform: translate(-50%, -50%) scale(1.5);
         opacity: 0.2;
     }
     100% {
@@ -53,34 +38,43 @@
 
 .circle h1 {
     position: relative;
-    z-index: 2;
+    z-index: 3;
     margin: 0;
     font-size: 1.2rem;
 }
-.circle::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 80%;
-    height: 80%;
-    border-radius: 50%;
-    transform: translate(-25%, -25%);
-    background-color: var(--wave-color1, rgba(255, 255, 255, 0.25));
-    animation: pulse 3s infinite ease-out;
-    z-index: 0;
-}
 
+.circle::before,
 .circle::after {
     content: "";
     position: absolute;
     top: 50%;
     left: 50%;
+    border-radius: 50%;
+    z-index: 2; /* above grid but below text */
+}
+
+.circle::before {
+    width: 80%;
+    height: 80%;
+    transform: translate(-50%, -50%);
+    background-color: var(--wave-color1, rgba(255, 255, 255, 0.25));
+    animation: pulse 3s infinite ease-out;
+}
+
+.circle::after {
     width: 90%;
     height: 90%;
-    border-radius: 50%;
     transform: translate(-50%, -50%);
     background-color: var(--wave-color2, rgba(255, 255, 255, 0.15));
     animation: pulse 3s infinite ease-in-out;
-    z-index: 0;
+}
+
+.circle span {
+    display: block;
+    text-align: center;
+    line-height: 1.2;
+    word-break: break-word;
+    max-width: 80%;
+    position: relative;
+    z-index: 3;
 }
