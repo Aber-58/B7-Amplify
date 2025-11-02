@@ -54,16 +54,9 @@ function Live() {
                 </>))}
 
             </div>
-            <div className="chat-container">
-                <input
-                    value={textbox}
-                   onKeyDown={e => sendMessage(e)} onChange={e => setTextbox(e.target.value)}
-                    className="chat"
-                    placeholder="Type a message"
-                />
-            </div>
+            <input value={textbox} onKeyDown={e => sendMessage(e)} onChange={e => setTextbox(e.target.value)}
+                   className="chat" placeholder="Chat"/>
         </div>
-
     </>
 }
 
