@@ -384,5 +384,29 @@ def get_clusters(uuid_param):
         
         formatted_clusters.append(formatted_cluster)
     
-    # Return clusters array as expected by frontend
+    # Safety check: If no clusters found but topic has opinions, create a default cluster
+    # This should rarely happen as clustering should always return at least one cluster
+    if len(formatted_clusters) == 0:
+        print(f"Warning: No clusters found for topic {uuid_param}, checking for opinions...")
+        raw_opinions = db.get_raw_opinions_for_topic(uuid_param)
+        if len(raw_opinions) > 0:
+            print(f"Found {len(raw_opinions)} opinions but no clusters, creating emergency cluster")
+            # Create a default cluster with all opinions
+            if len(raw_opinions) > 0:
+                first_opinion = raw_opinions[0]
+                emergency_cluster = {
+                    "cluster_id": 0,  # Temporary ID
+                    "heading": first_opinion.get("opinion", "General opinions"),
+                    "leader_id": first_opinion.get("username", "unknown"),
+                    "raw_opinions": [{
+                        "raw_id": op.get("raw_id"),
+                        "username": op.get("username"),
+                        "opinion": op.get("opinion"),
+                        "weight": op.get("weight", 5)
+                    } for op in raw_opinions],
+                }
+                formatted_clusters.append(emergency_cluster)
+                print(f"Created emergency cluster with {len(raw_opinions)} opinions")
+    
+    # Return clusters array as expected by frontend (always at least one if opinions exist)
     return {"clusters": formatted_clusters}
