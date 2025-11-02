@@ -1,8 +1,86 @@
+.center-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3rem;
+    padding: 1rem;
+}
+
+@media (max-width: 768px) {
+    .center-grid {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
 .circle {
+    position: relative;
     background-color: gray;
-    border-radius: 100%;
-    width: 150px;
-    height: 150px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    padding: 1rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.circle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+
+
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.5); /* bigger wave */
+        opacity: 0.2;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.6;
+    }
+}
+
+.circle h1 {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+    font-size: 1.2rem;
+}
+.circle::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    transform: translate(-25%, -25%);
+    background-color: var(--wave-color1, rgba(255, 255, 255, 0.25));
+    animation: pulse 3s infinite ease-out;
+    z-index: 0;
+}
+
+.circle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90%;
+    height: 90%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--wave-color2, rgba(255, 255, 255, 0.15));
+    animation: pulse 3s infinite ease-in-out;
+    z-index: 0;
 }

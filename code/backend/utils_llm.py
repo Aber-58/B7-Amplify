@@ -2,27 +2,42 @@ from mistralai import Mistral
 import os
 import json
 
-_API_KEY = os.getenv("MISTRAL_API_KEY", "")
-if not _API_KEY:
-    raise ValueError("Missing MISTRAL_API_KEY environment variable. Check whatsapp, didnt push it since env is public" )
+_mistral = None  # will hold the client instance
 
-_mistral = Mistral(api_key=_API_KEY)
+def _get_mistral_client():
+    """Lazy initialize the Mistral client."""
+    global _mistral
+    if _mistral is None:
+        api_key = os.getenv("MISTRAL_API_KEY", "")
+        if not api_key:
+            raise ValueError(
+                "Missing MISTRAL_API_KEY environment variable. "
+                "Check WhatsApp; it wasn't pushed since env is public."
+            )
+        _mistral = Mistral(api_key=api_key)
+    return _mistral
 
 def ask_mistral(prompt, model="mistral-small-latest"):
-    res = _mistral.chat.complete(
+    client = _get_mistral_client()
+    
+    res = client.chat.complete(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         stream=False
     )
+
     try:
-        data = json.loads(res.choices[0].message.content.replace('json', '').replace('`', ''))
+        # Clean up potential markdown/code fences before parsing
+        content = res.choices[0].message.content.replace('json', '').replace('`', '')
+        data = json.loads(content)
         return data
     except json.JSONDecodeError as e:
         raise ValueError(
-            f"Model response could not be parsed as JSON. "
+            f"Model response could not be parsed as JSON.\n"
             f"Raw content was:\n{res.choices[0].message.content}\n\n"
             f"Error details: {e}"
         )
+
 
 def group_texts_by_label(texts, labels):
     grouped = {}

@@ -28,4 +28,4 @@ RUN npm --prefix /app/frontend run build
 RUN mkdir -p /state
 EXPOSE 4200
 
-CMD ["/bin/bash", "-c", "source /app/env.source && exec python /app/backend/app.py"]
+CMD ["/bin/bash", "-c", "exec python /app/backend/app.py"]

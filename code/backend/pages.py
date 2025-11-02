@@ -203,11 +203,15 @@ def trigger_clustering(uuid_param):
     opinion_clustering.trigger(uuid_param)
     return {"status": "success", "cooldown": 1.0}
 
-
+cluster_processed = {}
+cluster_circle_sizes = {} # A dict with the names
 @routes.route('/clusters/<uuid_param>', methods=['GET'])
 def get_clusters(uuid_param):
     """Get all clustered opinions with their constituent raw opinions and users for a topic"""
     
+    if uuid_param in cluster_processed.keys():
+        return cluster_processed[uuid_param]
+
     result = db.get_content_by_uuid(uuid_param)
     if not result:
         return {"error": "Topic not found"}, 404
@@ -216,5 +220,16 @@ def get_clusters(uuid_param):
     cluster_data = {"clusters": clusters}
     title, prompt = choose_proposed_solutions(cluster_data)
     mistral_result = ask_mistral(prompt)
+    result = {"title":title, "mistral_result":mistral_result}
+    cluster_processed[uuid_param] = result
+    cluster_circle_sizes[uuid_param] = {key:50/3 for key in mistral_result.keys()}
+    return result
 
-    return {"title":title, "mistral_result":mistral_result}
+
+@routes.route('/get_circle_sizes/<uuid_param>', methods=['GET'])
+def get_circle_sizes(uuid_param):
+    circle_sizes = cluster_circle_sizes[uuid_param]
+    # total = sum(circle_sizes.values())
+    # circle_sizes = {k: v * 50 / total for k, v in circle_sizes.items()} # Normalize so that all values sum up to 50
+    # cluster_circle_sizes[uuid_param] = circle_sizes
+    return circle_sizes
