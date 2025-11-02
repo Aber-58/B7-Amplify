@@ -8,6 +8,8 @@ import {Solution} from "./model/Solution";
 import {Opinion} from "./model/Opinion";
 import {Dictionary} from "./model/Dictionary";
 import {LiveClusterResponse} from "./LiveClusterResponse";
+import {MessageResponse} from "./model/MessageResponse";
+import {Message} from "./model/Message";
 
 const API_ENDPOINT = '/api';
 const JSON_HEADER = {'Content-Type': 'application/json'};
@@ -105,19 +107,21 @@ export async function getLiveClusters(uuid: string): Promise<LiveViewResponse> {
         method: 'GET',
         headers: JSON_HEADER,
     }).then(res => res.json());
+    const messages = await getLastMessages()
     const clusterSizeData = new Map<string, number>(Object.entries(await getClusterCircleSize(uuid)));
 
     const solutions: Solution[] = Object.entries(clusterData.mistral_result).map(([key, value]) => {
         return ({solutionTitle: key, solutionWeight: clusterSizeData.get(key) ?? 0});
     })
 
+    const sortedMessages: Message[] = messages.messages.map(m => ({text: m}))
     const opinions: Opinion[] = Object.values(clusterData.mistral_result).map(opinion => ({opinion, author: "-"}))
 
     const view: LiveViewResponse = ({
         problemTitle: clusterData.title,
         opinions: opinions,
         solutions: solutions,
-        sortedMessages: []
+        sortedMessages
     })
 
     return view;
@@ -150,4 +154,37 @@ export function triggerCluster(uuid: string): Promise<{ status: string, cooldown
         }
         return Promise.reject(res.statusText);
     });
+}
+
+export function sendChatMessage(message: String): Promise<void> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.CHAT_ADD}`, {
+        method: 'POST',
+        headers: JSON_HEADER,
+        body: JSON.stringify({message}),
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText);
+    });
+}
+
+
+export function getLastMessages(): Promise<MessageResponse> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.CHAT_LAST}/10`, {
+        method: 'GET',
+        headers: JSON_HEADER,
+    }).then(res => {
+        if (res.ok) {
+            return res.json();
+        }
+        return Promise.reject(res.statusText);
+    });
+}
+
+export function updateBallSizes(uuid: string): Promise<void> {
+    return fetch(`${API_ENDPOINT}/${Endpoints.UPDATE_BALL_SIZES}/${uuid}`, {
+        method: 'POST',
+        headers: JSON_HEADER,
+    }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
