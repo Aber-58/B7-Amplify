@@ -2,8 +2,8 @@ import "./Error.css";
 function Error() {
 
     return <>
-            <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8">
+            <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-blue-200 rounded-lg shadow-sm p-8">
                     <h1 className="text-3xl font-bold text-primary text-center mb-8">Error</h1>
                     <div className="space-y-8">
                         <div className="flex-col gap-4 w-full flex items-center justify-center">
@@ -16,7 +16,7 @@ function Error() {
                         </div>
             <div className="space-y-8">
                 <a href="login">
-                    <button className="w-full bg-primary text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors font-medium">
+                    <button className="w-full bg-blue-950 text-white py-3 px-4 rounded-lg hover:bg-primary-dark transition-colors font-medium">
                         Go to the login page
                     </button>
                 </a>
