@@ -1,4 +1,4 @@
-// TODO: dont hardcode the API url :/
+// Use relative URL - works in both production (Render.com) and development
 import {Endpoints} from "./Endpoints";
 import {TopicResponse} from "./model/TopicResponse";
 import {JoinResponse} from "./model/JoinResponse";
@@ -9,13 +9,14 @@ import {Opinion} from "./model/Opinion";
 import {Dictionary} from "./model/Dictionary";
 import {LiveClusterResponse} from "./LiveClusterResponse";
 
-const API_ENDPOINT = `http://localhost:4200/api`;
+const API_ENDPOINT = '/api';
 const JSON_HEADER = {'Content-Type': 'application/json'};
 
 export function loginUser(username: string): Promise<void> {
     return fetch(`${API_ENDPOINT}/${Endpoints.LOGIN}`, {
         method: 'POST',
         headers: JSON_HEADER,
+        credentials: 'include',  // Include cookies for session management
         body: JSON.stringify({username})
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
@@ -45,7 +46,7 @@ export function joinSession(uuid: string): Promise<JoinResponse> {
     return fetch(`${API_ENDPOINT}/${Endpoints.JOIN}/${uuid}`, {
         method: 'POST',
         headers: JSON_HEADER,
-        credentials: 'same-origin',
+        credentials: 'include',  // Changed from 'same-origin' to 'include' for cross-origin compatibility
     }).then(res => {
         if (res.ok) {
             return res.json();
@@ -58,7 +59,7 @@ export function createOpinion(uuid: string, opinion: string, rating: number): Pr
     return fetch(`${API_ENDPOINT}/${Endpoints.POLL}/${uuid}`, {
         method: 'POST',
         headers: JSON_HEADER,
-        credentials: 'same-origin',
+        credentials: 'include',  // Changed from 'same-origin' to 'include' for cross-origin compatibility
         body: JSON.stringify({opinion, rating})
     }).then(res => res.ok ? Promise.resolve() : Promise.reject(res.statusText))
 }
