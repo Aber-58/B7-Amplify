@@ -6,7 +6,7 @@ import database as db
 import opinion_clustering
 
 from utils_llm import choose_proposed_solutions, ask_mistral
-
+from utils_chat import get_chat_LV_popularity
 routes = Blueprint('routes', __name__)
 
 def rate_limit(seconds):
@@ -234,3 +234,80 @@ chat_messages = []
 new_chat_messages = []
 
 
+# ==========================
+# 💬 Chat message utilities
+# ==========================
+
+def add_message(msg):
+    """Add a new chat message."""
+    global chat_messages, new_chat_messages
+    chat_messages.append(msg)
+    new_chat_messages.append(msg)
+
+
+def get_last_messages(limit=10):
+    """Return the last X messages."""
+    return chat_messages[-limit:]
+
+
+def get_new_messages():
+    """Return all new messages, then clear the list."""
+    global new_chat_messages
+    messages = new_chat_messages.copy()
+    new_chat_messages.clear()
+    return messages
+
+# <uuid_param>
+def update_ball_sizes(uuid_param):
+    global cluster_circle_sizes
+
+
+    LVs = list(cluster_circle_sizes[uuid_param].keys())
+    texts = get_new_messages()
+    if len(texts) == 0:
+        return 'No msgs found'
+    adjustments = get_chat_LV_popularity(LVs, texts)
+
+
+    original = cluster_circle_sizes[uuid_param].copy()
+
+    print("original dict:", cluster_circle_sizes)
+    print("adjustments dict:", adjustments)
+
+    adjusted = {k: original.get(k, 0) + adjustments.get(k, 0) for k in original}
+
+    total = sum(adjusted.values())
+    cluster_circle_sizes[uuid_param] = {k: v * 50 / total for k, v in adjusted.items()}
+
+    return 'worked'
+
+# ==========================
+# 💬 Chat API routes
+# ==========================
+
+@routes.route('/chat/add', methods=['POST'])
+def chat_add():
+    data = request.get_json() or {}
+    msg = data.get("message")
+
+    if not msg:
+        return {"error": "Message is required"}, 400
+
+    add_message(msg)
+    return {"status": "ok"}, 200
+
+
+@routes.route('/chat/last/<int:limit>', methods=['GET'])
+def chat_last(limit):
+    """Return the last X chat messages."""
+    return {"messages": get_last_messages(limit)}, 200
+
+@routes.route('/update_ball_sizes/<uuid_param>', methods=['POST'])
+def post_update_ball_sizes(uuid_param):
+    if len(new_chat_messages)<5:
+        return {"status": "less than 5 msgs, not doing anything"}, 200
+    try:
+        update_ball_sizes(uuid_param)  # Call your function
+        return {"status": "success"}, 200
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 500

@@ -1,42 +1,18 @@
-import utils_chat as uc
-from sentiment_analyzer import SentimentAnalyzer
-import warnings
-warnings.filterwarnings("ignore", message="`return_all_scores` is now deprecated")
+from utils_llm import choose_proposed_solutions, ask_mistral
+from utils_chat import get_chat_LV_popularity
 
+cluster_circle_sizes = {'LV1':16, "LV2": 16, "LV3":16}
 
-_analyzer = None
+LVs = list(cluster_circle_sizes.keys())
+texts = ['LV1 Love', 'LV2 sucks']
 
-def get_chat_LV_popularity(LVs, texts):
-    """Analyze sentiment popularity per LV (lazy-loads analyzer)."""
-    global _analyzer
+adjustments = get_chat_LV_popularity(LVs, texts)  # e.g. {'LV1':1, 'LV2':-1, 'LV3':0}
 
-    if _analyzer is None:
-        _analyzer = SentimentAnalyzer()
+cluster_circle_sizes = cluster_circle_sizes.copy()
+adjusted = {k: cluster_circle_sizes.get(k, 0) + adjustments.get(k, 0) for k in cluster_circle_sizes}
 
-    sentiment_results = _analyzer.analyze_batch(texts)
-    sentiment_results = [result['sentiment'] for result in sentiment_results]
+# Normalize so the total sums to 50
+total = sum(adjusted.values())
+cluster_circle_sizes = {k: v * 50 / total for k, v in adjusted.items()}
 
-    category_results = uc.categorize_sentences(LV=LVs, sentences=texts)
-
-    score_map = {'positive': 1, 'negative': -1, 'neutral': 0}
-
-    result = {}
-    for text, sentiment in zip(texts, sentiment_results):
-        lv = category_results.get(text)
-        if not lv or lv == "Uncategorized":
-            continue  # Skip uncategorized
-        score = score_map.get(sentiment, 0)
-        result[lv] = result.get(lv, 0) + score
-
-    return result
-
-
-if __name__ == "__main__":
-    # Example test data
-    LVs = ['LV1', 'LV2', 'LV3']
-    texts = ['i hate LV1', 'i love LV2', 'LV3 is so BS']
-
-    result = get_chat_LV_popularity(LVs, texts)
-
-    print("Texts:", texts)
-    print("Popularity result:", result)
+print(cluster_circle_sizes)
