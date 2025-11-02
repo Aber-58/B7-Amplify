@@ -229,3 +229,8 @@ def get_circle_sizes(uuid_param):
     # circle_sizes = {k: v * 50 / total for k, v in circle_sizes.items()} # Normalize so that all values sum up to 50
     # cluster_circle_sizes[uuid_param] = circle_sizes
     return circle_sizes
+
+chat_messages = []
+new_chat_messages = []
+
+
