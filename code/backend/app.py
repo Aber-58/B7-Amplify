@@ -9,7 +9,8 @@ import opinion_clustering
 
 app = Flask(__name__, static_folder='../frontend/build', static_url_path='')
 app.register_blueprint(routes, url_prefix='/api')
-CORS(app)
+# Enable CORS with credentials support for cookie-based authentication
+CORS(app, supports_credentials=True)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
