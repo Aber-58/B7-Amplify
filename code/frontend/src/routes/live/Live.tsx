@@ -23,7 +23,7 @@ function Live() {
                 updateBallSizes(uuid)
                 getLiveClusters(uuid).then(setLiveView)
             }
-        }, 250)
+        }, 1000)
     }
 
     function sendMessage(e: React.KeyboardEvent<HTMLInputElement>) {
